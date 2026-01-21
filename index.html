@@ -2,25 +2,134 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Mi Experiencia 360</title>
+    <title>Mi Tour Virtual</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <script>
+      AFRAME.registerComponent('tour-logic', {
+        init: function () {
+          var el = this.el; // La flecha
+          
+          el.addEventListener('click', function () {
+            var target = el.getAttribute('data-target');
+            
+            // Si la flecha no tiene destino (la que no lleva a nada)
+            if (!target || target === "null") {
+              console.log("Esta flecha no lleva a ningún lado.");
+              // Opcional: Mostrar una alerta visual o sonido
+              return; 
+            }
+
+            // Cambiar la escena
+            cambiarEscena(target);
+          });
+          
+          // Efecto visual al pasar el mouse por encima (hover)
+          el.addEventListener('mouseenter', function () {
+            el.setAttribute('color', '#FFCC00'); // Se pone amarilla
+            el.setAttribute('scale', '1.2 1.2 1.2'); // Crece un poco
+          });
+          el.addEventListener('mouseleave', function () {
+            el.setAttribute('color', '#FFF'); // Vuelve a blanca
+            el.setAttribute('scale', '1 1 1'); // Tamaño normal
+          });
+        }
+      });
+
+      // BASE DE DATOS DE TU TOUR
+      // Aquí definimos qué imagen va en cada lugar y dónde están las flechas
+      const escenas = {
+        'entrada': {
+          imagen: '#img-entrada',
+          flechas: [
+            { target: 'entrada2', position: '-5 -1 -5', rotation: '0 45 0' } // Flecha hacia Entrada 2
+          ]
+        },
+        'entrada2': {
+          imagen: '#img-entrada2',
+          flechas: [
+            { target: 'selector1', position: '0 -1 -5', rotation: '0 0 0' }, // Flecha hacia Selector 1
+            // { target: 'entrada', position: '0 -1 5', rotation: '0 180 0' } // (Opcional) Flecha para volver atrás
+          ]
+        },
+        'selector1': {
+          imagen: '#img-selector1',
+          flechas: [
+            { target: 'seleccion1', position: '4 -1 -4', rotation: '0 -45 0' }, // Flecha Correcta
+            { target: 'null', position: '-4 -1 -4', rotation: '0 45 0' }      // Flecha que NO lleva a nada
+          ]
+        },
+        'seleccion1': {
+          imagen: '#img-seleccion1',
+          flechas: [
+            // Aquí termina el tour, o puedes poner una flecha para volver al inicio
+            { target: 'selector1', position: '0 -1 5', rotation: '0 180 0' } // Volver
+          ]
+        }
+      };
+
+      function cambiarEscena(nombreEscena) {
+        // 1. Cambiar el cielo (imagen 360)
+        var cielo = document.querySelector('#cielo');
+        var datos = escenas[nombreEscena];
+        cielo.setAttribute('src', datos.imagen);
+
+        // 2. Borrar flechas viejas
+        var contenedorFlechas = document.querySelector('#flechas-container');
+        contenedorFlechas.innerHTML = '';
+
+        // 3. Crear flechas nuevas
+        datos.flechas.forEach(flecha => {
+          var entidad = document.createElement('a-entity');
+          
+          // Usamos un cono para simular una flecha 3D
+          entidad.setAttribute('geometry', 'primitive: cone; radiusBottom: 0.5; radiusTop: 0.01; height: 1.5');
+          // La rotamos 90 grados en X para que apunte hacia adelante en el suelo
+          entidad.setAttribute('rotation', `90 ${parseRotation(flecha.rotation)} 0`); 
+          entidad.setAttribute('position', flecha.position);
+          entidad.setAttribute('material', 'color: #FFF; opacity: 0.8');
+          entidad.setAttribute('data-target', flecha.target);
+          entidad.setAttribute('tour-logic', ''); // Añadimos la lógica de clic
+          
+          // Ajuste fino: rotar el contenedor padre para apuntar a la dirección correcta si es necesario,
+          // pero aquí simplificamos rotando el objeto visualmente.
+          
+          contenedorFlechas.appendChild(entidad);
+        });
+      }
+
+      function parseRotation(rotString) {
+        // Extraemos solo la rotación Y para simplificar la flecha en el suelo
+        if(!rotString) return 0;
+        let parts = rotString.split(' ');
+        return parts[1] || 0;
+      }
+
+      // Iniciar en la primera escena al cargar
+      window.onload = function() {
+        cambiarEscena('entrada');
+      };
+    </script>
   </head>
   <body>
-    <a-scene>
+    <a-scene cursor="rayOrigin: mouse" raycaster="objects: [tour-logic]">
       
       <a-assets>
-        <img id="mi-panorama" src="Entrada.jpeg">
+        <img id="img-entrada" src="Entrada.jpeg">
+        <img id="img-entrada2" src="Entrada2.jpeg">
+        <img id="img-selector1" src="Selector1.jpeg">
+        <img id="img-seleccion1" src="Seleccion1.jpeg">
       </a-assets>
 
-      <a-sky src="#mi-panorama" rotation="0 -90 0"></a-sky>
+      <a-sky id="cielo" rotation="0 -90 0"></a-sky>
 
-      <a-text value="Bienvenido a mi entorno VR" 
-              position="0 1.6 -3" 
-              align="center" 
-              color="#FFF">
-      </a-text>
+      <a-entity id="flechas-container"></a-entity>
 
-      <a-entity camera look-controls></a-entity>
+      <a-entity position="0 1.6 0">
+        <a-camera>
+            <a-cursor color="yellow"></a-cursor>
+        </a-camera>
+      </a-entity>
 
     </a-scene>
   </body>
