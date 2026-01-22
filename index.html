@@ -1,118 +1,218 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
   <head>
     <meta charset="utf-8">
-    <title>Mi Tour Virtual 4K</title>
+    <title>Tour Virtual Completo</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
     <script>
+      // Componente para manejar los clics en las flechas
       AFRAME.registerComponent('tour-logic', {
         init: function () {
           var el = this.el;
           
-          // Evento de Clic
+          // Evento de Clic para cambiar de escena
           el.addEventListener('click', function () {
             var target = el.getAttribute('data-target');
-            if (!target || target === "null") return;
-            cambiarEscena(target);
+            if (target && target !== "null") {
+              cambiarEscena(target);
+            }
           });
           
-          // Eventos visuales (Hover)
+          // Efectos visuales al pasar el cursor (Hover)
           el.addEventListener('mouseenter', function () {
             el.setAttribute('scale', '1.2 1.2 1.2');
-            el.setAttribute('material', 'color: #FFD700; opacity: 1'); // Dorado al mirar
+            el.setAttribute('material', 'color: #FFD700; opacity: 1'); // Dorado
           });
           el.addEventListener('mouseleave', function () {
             el.setAttribute('scale', '1 1 1');
-            el.setAttribute('material', 'color: #FFF; opacity: 0.8'); // Blanco normal
+            el.setAttribute('material', 'color: #FFF; opacity: 0.8'); // Blanco
           });
         }
       });
 
+      // BASE DE DATOS DEL RECORRIDO
+      // Las posiciones y rotaciones son EJEMPLOS. Tendrás que ajustarlas visualmente.
+      // position: 'X(izq/der) Y(altura) Z(frente/atrás)'
+      // rotation: '0 GradosY(giro horizontal) 0'
       const escenas = {
         'entrada': {
           imagen: '#img-entrada',
-          // Rotación inicial de la cámara para esta escena (opcional)
-          rotationOffset: 0, 
           flechas: [
-            { target: 'entrada2', position: '-5 -1 -5', rotation: '0 45 0' }
+            { target: 'entrada2', position: '0 -1 -5', rotation: '0 0 0' } // Hacia adelante
           ]
         },
         'entrada2': {
           imagen: '#img-entrada2',
-          rotationOffset: 0,
           flechas: [
-            { target: 'selector1', position: '0 -1 -5', rotation: '0 0 0' }
+            { target: 'selector1', position: '0 -1 -5', rotation: '0 0 0' }, // Hacia adelante
+            { target: 'entrada', position: '0 -1 5', rotation: '0 180 0' }   // Atrás (Retorno)
           ]
         },
+        // --- BIFURCACIÓN PRINCIPAL ---
         'selector1': {
           imagen: '#img-selector1',
-          rotationOffset: 0,
           flechas: [
-            { target: 'seleccion1', position: '4 -1 -4', rotation: '0 -45 0' },
-            { target: 'null', position: '-4 -1 -4', rotation: '0 45 0' }
+            // Flecha Izquierda -> Camino Académico
+            { target: 'pasajeServicioAcademico', position: '-4 -1 -4', rotation: '0 45 0' },
+            // Flecha Derecha -> Camino GTH
+            { target: 'entradaGTH', position: '4 -1 -4', rotation: '0 -45 0' },
+            // Atrás (Retorno)
+            { target: 'entrada2', position: '0 -1 5', rotation: '0 180 0' }
           ]
         },
-        'seleccion1': {
-          imagen: '#img-seleccion1',
-          rotationOffset: 0,
+        
+        // --- CAMINO 1: SERVICIO ACADÉMICO ---
+        'pasajeServicioAcademico': {
+          imagen: '#img-pasajeServicioAcademico',
           flechas: [
-            { target: 'selector1', position: '0 -1 5', rotation: '0 180 0' }
+            { target: 'comedor2doPiso', position: '0 -1 -5', rotation: '0 0 0' },
+            { target: 'selector1', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+          ]
+        },
+        'comedor2doPiso': {
+          imagen: '#img-comedor2doPiso',
+          flechas: [
+            { target: 'edificioD', position: '0 -1 -5', rotation: '0 0 0' },
+            { target: 'pasajeServicioAcademico', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+          ]
+        },
+        'edificioD': {
+          imagen: '#img-edificioD',
+          flechas: [
+            { target: 'edificioA', position: '0 -1 -5', rotation: '0 0 0' },
+            { target: 'comedor2doPiso', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+          ]
+        },
+        // --- BIFURCACIÓN EDIFICIO A ---
+        'edificioA': {
+          imagen: '#img-edificioA',
+          flechas: [
+            { target: 'cafeteria', position: '-4 -1 -4', rotation: '0 45 0' },   // Izq -> Cafetería
+            { target: 'pabellonA', position: '4 -1 -4', rotation: '0 -45 0' },   // Der -> Pabellón A
+            { target: 'edificioD', position: '0 -1 5', rotation: '0 180 0' }     // Atrás
+          ]
+        },
+        'cafeteria': {
+          imagen: '#img-cafeteria',
+          flechas: [
+            { target: 'explanadaConvention', position: '0 -1 -5', rotation: '0 0 0' },
+            { target: 'edificioA', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+          ]
+        },
+        'explanadaConvention': {
+          imagen: '#img-explanadaConvention',
+          flechas: [
+            { target: 'cafeteria', position: '0 -1 5', rotation: '0 180 0' } // Fin del camino, solo volver
+          ]
+        },
+        'pabellonA': {
+          imagen: '#img-pabellonA',
+          flechas: [
+            { target: 'edificioA', position: '0 -1 5', rotation: '0 180 0' } // Fin del camino, solo volver
+          ]
+        },
+
+        // --- CAMINO 2: GTH ---
+        'entradaGTH': {
+          imagen: '#img-entradaGTH',
+          flechas: [
+            { target: 'accesoGTH', position: '0 -1 -5', rotation: '0 0 0' },
+            { target: 'selector1', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+          ]
+        },
+        'accesoGTH': {
+          imagen: '#img-accesoGTH',
+          flechas: [
+            { target: 'aulasAyB', position: '0 -1 -5', rotation: '0 0 0' },
+            { target: 'entradaGTH', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+          ]
+        },
+        'aulasAyB': {
+          imagen: '#img-aulasAyB',
+          flechas: [
+            { target: 'salidaAreasVerdes', position: '0 -1 -5', rotation: '0 0 0' },
+            { target: 'accesoGTH', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+          ]
+        },
+        'salidaAreasVerdes': {
+          imagen: '#img-salidaAreasVerdes',
+          flechas: [
+            { target: 'entradaCapilla', position: '0 -1 -5', rotation: '0 0 0' },
+            { target: 'aulasAyB', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+          ]
+        },
+        'entradaCapilla': {
+          imagen: '#img-entradaCapilla',
+          flechas: [
+            { target: 'salidaAreasVerdes', position: '0 -1 5', rotation: '0 180 0' } // Fin del camino, solo volver
           ]
         }
       };
 
+      // Función principal para cambiar de escena
       function cambiarEscena(nombreEscena) {
         var datos = escenas[nombreEscena];
         
-        // 1. Cambiar Imagen
+        // 1. Cambiar Imagen de Fondo
         var cielo = document.querySelector('#cielo');
         cielo.setAttribute('src', datos.imagen);
 
-        // 2. IMPORTANTÍSIMO: Centrar la cámara para recuperar la calidad
-        // Esto evita que la imagen se vea "cerca" o deformada
+        // 2. Resetear Cámara al centro (mantiene la calidad de imagen)
         var camara = document.querySelector('#camara-principal');
         camara.setAttribute('position', '0 1.6 0');
         
-        // (Opcional) Si quieres resetear hacia dónde mira el usuario:
-        // camara.components['look-controls'].yawObject.rotation.y = 0;
-
-        // 3. Regenerar Flechas
+        // 3. Borrar flechas antiguas y crear nuevas
         var contenedor = document.querySelector('#flechas-container');
         contenedor.innerHTML = '';
 
         datos.flechas.forEach(flecha => {
           var entidad = document.createElement('a-entity');
+          // Usamos un cono como flecha
           entidad.setAttribute('geometry', 'primitive: cone; radiusBottom: 0.5; radiusTop: 0.01; height: 1.5');
+          // Rotamos el cono 90 grados en X para acostarlo en el suelo
           entidad.setAttribute('rotation', `90 ${parseRotation(flecha.rotation)} 0`); 
           entidad.setAttribute('position', flecha.position);
           entidad.setAttribute('material', 'color: #FFF; opacity: 0.8');
           entidad.setAttribute('data-target', flecha.target);
-          entidad.setAttribute('tour-logic', ''); 
+          entidad.setAttribute('tour-logic', ''); // Añadir comportamiento de clic
           contenedor.appendChild(entidad);
         });
       }
 
+      // Función auxiliar para extraer la rotación Y
       function parseRotation(rotString) {
         if(!rotString) return 0;
         return rotString.split(' ')[1] || 0;
       }
 
+      // Iniciar en la primera escena
       window.onload = function() { cambiarEscena('entrada'); };
     </script>
   </head>
   
   <body>
     <a-scene 
-      renderer="antialias: true; colorManagement: true; sortObjects: true; highRefreshRate: true;"
+      renderer="antialias: true; colorManagement: true; highRefreshRate: true;"
       cursor="rayOrigin: mouse" 
       raycaster="objects: [tour-logic]">
       
       <a-assets>
-        <img id="img-entrada" src="Entrada.jpeg">
-        <img id="img-entrada2" src="Entrada2.jpeg">
-        <img id="img-selector1" src="Selector1.jpeg">
-        <img id="img-seleccion1" src="Seleccion1.jpeg">
+        <img id="img-entrada" src="imagenes/Entrada.jpeg">
+        <img id="img-entrada2" src="imagenes/Entrada2.jpeg">
+        <img id="img-selector1" src="imagenes/Selector1.jpeg">
+        <img id="img-pasajeServicioAcademico" src="imagenes/PasajeSercicioAcademico.jpeg">
+        <img id="img-comedor2doPiso" src="imagenes/Comedor2doPiso.jpeg">
+        <img id="img-edificioD" src="imagenes/EdificioD.jpeg">
+        <img id="img-edificioA" src="imagenes/EdificioA.jpeg">
+        <img id="img-cafeteria" src="imagenes/Cafeteria.jpeg">
+        <img id="img-explanadaConvention" src="imagenes/ExplanadaConvention.jpeg">
+        <img id="img-pabellonA" src="imagenes/PabellonA.jpeg">
+        <img id="img-entradaGTH" src="imagenes/EntradaGTH.jpeg">
+        <img id="img-accesoGTH" src="imagenes/AccesoGTH.jpeg">
+        <img id="img-aulasAyB" src="imagenes/AulasAyB.jpeg">
+        <img id="img-salidaAreasVerdes" src="imagenes/SalidaAreasVerdes.jpeg">
+        <img id="img-entradaCapilla" src="imagenes/EntradaCapilla.jpeg">
       </a-assets>
 
       <a-sky id="cielo" radius="500" rotation="0 -90 0"></a-sky>
