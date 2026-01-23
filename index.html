@@ -2,200 +2,324 @@
 <html lang="es">
   <head>
     <meta charset="utf-8">
-    <title>Tour Virtual Completo</title>
+    <title>Tour Virtual - Transición Suave</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
+    <style>
+      #info-panel {
+        position: fixed; top: 20px; left: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 20px; border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 9999; font-family: sans-serif;
+        width: 320px; border: 2px solid #007bff; text-align: center;
+      }
+      #coords-display {
+        font-size: 20px; font-weight: bold; color: #d00;
+        display: block; margin: 15px 0; background: #f0f0f0;
+        padding: 10px; border: 1px dashed #666; user-select: text; 
+      }
+      .btn {
+        background: #007bff; color: white; border: none; padding: 10px 20px;
+        border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%;
+      }
+      .btn:hover { background: #0056b3; }
+      .instrucciones { font-size: 13px; color: #444; margin-bottom: 10px; text-align: left;}
+    </style>
+
     <script>
-      // Componente para manejar los clics en las flechas
-      AFRAME.registerComponent('tour-logic', {
+      // =============================================================
+      // 1. HERRAMIENTA DE CALIBRACIÓN (Misma lógica 20m)
+      // =============================================================
+      AFRAME.registerComponent('captura-coordenadas', {
         init: function () {
-          var el = this.el;
-          
-          // Evento de Clic para cambiar de escena
-          el.addEventListener('click', function () {
-            var target = el.getAttribute('data-target');
-            if (target && target !== "null") {
-              cambiarEscena(target);
-            }
-          });
-          
-          // Efectos visuales al pasar el cursor (Hover)
-          el.addEventListener('mouseenter', function () {
-            el.setAttribute('scale', '1.2 1.2 1.2');
-            el.setAttribute('material', 'color: #FFD700; opacity: 1'); // Dorado
-          });
-          el.addEventListener('mouseleave', function () {
-            el.setAttribute('scale', '1 1 1');
-            el.setAttribute('material', 'color: #FFF; opacity: 0.8'); // Blanco
+          this.el.addEventListener('click', function (evt) {
+            // Evitamos capturar clics si el objeto no es visible (durante transiciones)
+            if (this.getAttribute('material').opacity < 0.1) return;
+
+            var p = evt.detail.intersection.point;
+            var distanciaActual = Math.sqrt(p.x*p.x + p.z*p.z);
+            var distanciaDeseada = 20; 
+            var factor = distanciaDeseada / distanciaActual;
+
+            var x = (p.x * factor).toFixed(2);
+            var z = (p.z * factor).toFixed(2);
+            var coordTexto = `${x} -1 ${z}`;
+
+            var display = document.getElementById('coords-display');
+            if(display) display.innerText = coordTexto;
+
+            // Limpiar marcadores viejos
+            var viejos = document.querySelectorAll('.marcador-temp');
+            viejos.forEach(v => v.parentNode.removeChild(v));
+
+            var marker = document.createElement('a-entity');
+            marker.classList.add('marcador-temp');
+            marker.setAttribute('geometry', 'primitive: sphere; radius: 0.5');
+            marker.setAttribute('material', 'color: red; emissive: #FF0000; emissiveIntensity: 0.5');
+            marker.setAttribute('position', `${x} -1 ${z}`);
+            document.querySelector('a-scene').appendChild(marker);
           });
         }
       });
 
-      // BASE DE DATOS DEL RECORRIDO
-      // Las posiciones y rotaciones son EJEMPLOS. Tendrás que ajustarlas visualmente.
-      // position: 'X(izq/der) Y(altura) Z(frente/atrás)'
-      // rotation: '0 GradosY(giro horizontal) 0'
+      // =============================================================
+      // 2. LÓGICA DEL TOUR CON TRANSICIÓN
+      // =============================================================
+      AFRAME.registerComponent('tour-logic', {
+        init: function () {
+          var el = this.el;
+          el.addEventListener('click', function (evt) {
+            var target = el.getAttribute('data-target');
+            if (target && target !== "null") {
+              iniciarTransicion(target);
+            }
+          });
+          el.addEventListener('mouseenter', function () {
+            el.setAttribute('scale', '1.5 1.5 1.5'); 
+            el.setAttribute('material', 'color: #FFD700; opacity: 1'); 
+          });
+          el.addEventListener('mouseleave', function () {
+            el.setAttribute('scale', '1 1 1');
+            el.setAttribute('material', 'color: #FFF; opacity: 0.8');
+          });
+        }
+      });
+
+      // =============================================================
+      // 3. BASE DE DATOS DE ESCENAS
+      // =============================================================
       const escenas = {
         'entrada': {
           imagen: '#img-entrada',
-          flechas: [
-            { target: 'entrada2', position: '0 -1 -5', rotation: '0 0 0' } // Hacia adelante
-          ]
+          flechas: [ { target: 'entrada2', position: '19.82 -1 2.64', rotation: '0 0 0' } ]
         },
         'entrada2': {
           imagen: '#img-entrada2',
           flechas: [
-            { target: 'selector1', position: '0 -1 -5', rotation: '0 0 0' }, // Hacia adelante
-            { target: 'entrada', position: '0 -1 5', rotation: '0 180 0' }   // Atrás (Retorno)
+            { target: 'selector1', position: '-15.31 -1 12.86', rotation: '0 0 0' },
+            { target: 'entrada', position: '17.26 -1 -10.10', rotation: '0 180 0' }
           ]
         },
-        // --- BIFURCACIÓN PRINCIPAL ---
         'selector1': {
           imagen: '#img-selector1',
           flechas: [
-            // Flecha Izquierda -> Camino Académico
-            { target: 'pasajeServicioAcademico', position: '-4 -1 -4', rotation: '0 45 0' },
-            // Flecha Derecha -> Camino GTH
-            { target: 'entradaGTH', position: '4 -1 -4', rotation: '0 -45 0' },
-            // Atrás (Retorno)
-            { target: 'entrada2', position: '0 -1 5', rotation: '0 180 0' }
+            { target: 'pasajeServicioAcademico', position: '19.99 -1 -0.67', rotation: '0 45 0' },
+            { target: 'entradaGTH', position: '-10.52 -1 -17.01', rotation: '0 -45 0' },
+            { target: 'entrada2', position: '-13.28 -1 14.96', rotation: '0 180 0' }
           ]
         },
-        
-        // --- CAMINO 1: SERVICIO ACADÉMICO ---
         'pasajeServicioAcademico': {
           imagen: '#img-pasajeServicioAcademico',
           flechas: [
-            { target: 'comedor2doPiso', position: '0 -1 -5', rotation: '0 0 0' },
-            { target: 'selector1', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+            { target: 'comedor2doPiso', position: '14.88 -1 13.36', rotation: '0 0 0' },
+            { target: 'selector1', position: '6.66 -1 -18.86', rotation: '0 180 0' }
           ]
         },
         'comedor2doPiso': {
           imagen: '#img-comedor2doPiso',
           flechas: [
-            { target: 'edificioD', position: '0 -1 -5', rotation: '0 0 0' },
-            { target: 'pasajeServicioAcademico', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+            { target: 'edificioD', position: '-19.95 -1 1.47', rotation: '0 0 0' },
+            { target: 'pasajeServicioAcademico', position: '19.34 -1 -5.08', rotation: '0 180 0' }
           ]
         },
         'edificioD': {
           imagen: '#img-edificioD',
           flechas: [
-            { target: 'edificioA', position: '0 -1 -5', rotation: '0 0 0' },
-            { target: 'comedor2doPiso', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+            { target: 'edificioA', position: '-19.21 -1 5.57', rotation: '0 0 0' },
+            { target: 'comedor2doPiso', position: '19.94 -1 -1.60', rotation: '0 180 0' }
           ]
         },
-        // --- BIFURCACIÓN EDIFICIO A ---
         'edificioA': {
           imagen: '#img-edificioA',
           flechas: [
-            { target: 'cafeteria', position: '-4 -1 -4', rotation: '0 45 0' },   // Izq -> Cafetería
-            { target: 'pabellonA', position: '4 -1 -4', rotation: '0 -45 0' },   // Der -> Pabellón A
-            { target: 'edificioD', position: '0 -1 5', rotation: '0 180 0' }     // Atrás
+            { target: 'cafeteria', position: '18.65 -1 7.21', rotation: '0 45 0' },
+            { target: 'pabellonA', position: '-18.50 -1 7.61', rotation: '0 -45 0' },
+            { target: 'edificioD', position: '-7.46 -1 -18.56', rotation: '0 180 0' }
           ]
         },
         'cafeteria': {
           imagen: '#img-cafeteria',
           flechas: [
-            { target: 'explanadaConvention', position: '0 -1 -5', rotation: '0 0 0' },
-            { target: 'edificioA', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+            { target: 'explanadaConvention', position: '-8.38 -1 -18.16', rotation: '0 0 0' },
+            { target: 'edificioA', position: '6.47 -1 18.93', rotation: '0 180 0' }
           ]
         },
         'explanadaConvention': {
           imagen: '#img-explanadaConvention',
           flechas: [
-            { target: 'cafeteria', position: '0 -1 5', rotation: '0 180 0' } // Fin del camino, solo volver
+            { target: 'cafeteria', position: '10.52 -1 -17.01', rotation: '0 180 0' }
           ]
         },
         'pabellonA': {
           imagen: '#img-pabellonA',
           flechas: [
-            { target: 'edificioA', position: '0 -1 5', rotation: '0 180 0' } // Fin del camino, solo volver
+            { target: 'edificioA', position: '-12.48 -1 15.63', rotation: '0 180 0' }
           ]
         },
-
-        // --- CAMINO 2: GTH ---
         'entradaGTH': {
           imagen: '#img-entradaGTH',
           flechas: [
-            { target: 'accesoGTH', position: '0 -1 -5', rotation: '0 0 0' },
-            { target: 'selector1', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+            { target: 'accesoGTH', position: '-20.00 -1 0.05', rotation: '0 0 0' },
+            { target: 'selector1', position: '-0.05 -1 20.00', rotation: '0 180 0' }
           ]
         },
         'accesoGTH': {
           imagen: '#img-accesoGTH',
           flechas: [
-            { target: 'aulasAyB', position: '0 -1 -5', rotation: '0 0 0' },
-            { target: 'entradaGTH', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+            { target: 'aulasAyB', position: '3.28 -1 -19.73', rotation: '0 0 0' },
+            { target: 'entradaGTH', position: '-1.37 -1 19.95', rotation: '0 180 0' }
           ]
         },
         'aulasAyB': {
           imagen: '#img-aulasAyB',
           flechas: [
-            { target: 'salidaAreasVerdes', position: '0 -1 -5', rotation: '0 0 0' },
-            { target: 'accesoGTH', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+            { target: 'salidaAreasVerdes', position: '-17.38 -1 9.90', rotation: '0 0 0' },
+            { target: 'accesoGTH', position: '17.33 -1 -9.97', rotation: '0 180 0' }
           ]
         },
         'salidaAreasVerdes': {
           imagen: '#img-salidaAreasVerdes',
           flechas: [
-            { target: 'entradaCapilla', position: '0 -1 -5', rotation: '0 0 0' },
-            { target: 'aulasAyB', position: '0 -1 5', rotation: '0 180 0' } // Atrás
+            { target: 'entradaCapilla', position: '15.97 -1 -12.04', rotation: '0 0 0' },
+            { target: 'aulasAyB', position: '10.72 -1 16.89', rotation: '0 180 0' }
           ]
         },
         'entradaCapilla': {
           imagen: '#img-entradaCapilla',
           flechas: [
-            { target: 'salidaAreasVerdes', position: '0 -1 5', rotation: '0 180 0' } // Fin del camino, solo volver
+            { target: 'salidaAreasVerdes', position: '1.92 -1 -19.91', rotation: '0 180 0' }
           ]
         }
       };
 
-      // Función principal para cambiar de escena
-      function cambiarEscena(nombreEscena) {
+      // =============================================================
+      // FUNCIÓN DE TRANSICIÓN SUAVE (CROSS-DISSOLVE)
+      // =============================================================
+      // Variable para saber si el "Frente" es opaco o transparente
+      let capaFrenteVisible = false; 
+
+      function iniciarTransicion(nombreEscena) {
         var datos = escenas[nombreEscena];
         
-        // 1. Cambiar Imagen de Fondo
-        var cielo = document.querySelector('#cielo');
-        cielo.setAttribute('src', datos.imagen);
+        // 1. Ocultar flechas actuales para que no molesten durante la transición
+        var contenedor = document.querySelector('#flechas-container');
+        contenedor.setAttribute('visible', 'false');
 
-        // 2. Resetear Cámara al centro (mantiene la calidad de imagen)
-        var camara = document.querySelector('#camara-principal');
-        camara.setAttribute('position', '0 1.6 0');
-        
-        // 3. Borrar flechas antiguas y crear nuevas
+        // Referencias a las dos esferas
+        var cieloFondo = document.querySelector('#cielo-fondo');
+        var cieloFrente = document.querySelector('#cielo-frente');
+
+        // 2. Lógica de "Cover & Reveal" (Cubrir y Revelar)
+        if (capaFrenteVisible) {
+          // Si el FRENTE es visible, cargamos la nueva foto en el FONDO
+          // y desvanecemos el FRENTE (Opacity 1 -> 0) para revelar el fondo.
+          cieloFondo.setAttribute('src', datos.imagen);
+          
+          cieloFrente.setAttribute('animation', {
+            property: 'material.opacity',
+            to: 0,
+            dur: 1000, // Duración 1 segundo
+            easing: 'linear'
+          });
+          
+          // Desactivamos clics en la capa que desaparece
+          cieloFrente.classList.remove('clickable');
+          cieloFondo.classList.add('clickable');
+          
+          capaFrenteVisible = false;
+
+        } else {
+          // Si vemos el FONDO, cargamos la foto en el FRENTE
+          // y hacemos aparecer el FRENTE (Opacity 0 -> 1) para cubrir el fondo.
+          cieloFrente.setAttribute('src', datos.imagen);
+          
+          cieloFrente.setAttribute('animation', {
+            property: 'material.opacity',
+            to: 1,
+            dur: 1000,
+            easing: 'linear'
+          });
+
+          cieloFrente.classList.add('clickable');
+          cieloFondo.classList.remove('clickable');
+
+          capaFrenteVisible = true;
+        }
+
+        // 3. Cuando termine la transición (1000ms), actualizar flechas y cámara
+        setTimeout(() => {
+          // Resetear cámara (opcional, si quieres que siempre mire al frente al llegar)
+          // document.querySelector('#camara-principal').setAttribute('position', '0 1.6 0');
+          
+          // Generar nuevas flechas
+          generarFlechas(datos.flechas);
+          
+          // Mostrar flechas
+          contenedor.setAttribute('visible', 'true');
+        }, 1000);
+      }
+
+      function generarFlechas(listaFlechas) {
         var contenedor = document.querySelector('#flechas-container');
         contenedor.innerHTML = '';
-
-        datos.flechas.forEach(flecha => {
+        
+        listaFlechas.forEach(flecha => {
           var entidad = document.createElement('a-entity');
-          // Usamos un cono como flecha
-          entidad.setAttribute('geometry', 'primitive: cone; radiusBottom: 0.5; radiusTop: 0.01; height: 1.5');
-          // Rotamos el cono 90 grados en X para acostarlo en el suelo
+          entidad.setAttribute('geometry', 'primitive: cone; radiusBottom: 1.0; radiusTop: 0.01; height: 3');
           entidad.setAttribute('rotation', `90 ${parseRotation(flecha.rotation)} 0`); 
           entidad.setAttribute('position', flecha.position);
           entidad.setAttribute('material', 'color: #FFF; opacity: 0.8');
           entidad.setAttribute('data-target', flecha.target);
-          entidad.setAttribute('tour-logic', ''); // Añadir comportamiento de clic
+          entidad.setAttribute('class', 'clickable'); 
+          entidad.setAttribute('tour-logic', ''); 
           contenedor.appendChild(entidad);
         });
       }
 
-      // Función auxiliar para extraer la rotación Y
       function parseRotation(rotString) {
         if(!rotString) return 0;
         return rotString.split(' ')[1] || 0;
       }
 
-      // Iniciar en la primera escena
-      window.onload = function() { cambiarEscena('entrada'); };
+      window.onload = function() { 
+        // Cargar escena inicial directamente en el fondo
+        var datos = escenas['entrada'];
+        document.querySelector('#cielo-fondo').setAttribute('src', datos.imagen);
+        generarFlechas(datos.flechas);
+
+        // Copiar coordenadas
+        document.getElementById('btn-copy').addEventListener('click', function() {
+            var texto = document.getElementById('coords-display').innerText;
+            navigator.clipboard.writeText(texto);
+            var btn = document.getElementById('btn-copy');
+            btn.innerText = "¡COPIADO!";
+            btn.style.background = "#28a745";
+            setTimeout(() => {
+                btn.innerText = "COPIAR COORDENADA";
+                btn.style.background = "#007bff";
+            }, 1000);
+        });
+      };
     </script>
   </head>
   
   <body>
+    <div id="info-panel">
+      <h3>🎯 Calibrador (Radio: 20m)</h3>
+      <div class="instrucciones">
+        1. Apunta con el círculo amarillo.<br>
+        2. Haz clic izquierdo.<br>
+        3. Copia el resultado:
+      </div>
+      <span id="coords-display">0 -1 0</span>
+      <button id="btn-copy" class="btn">COPIAR COORDENADA</button>
+    </div>
+
     <a-scene 
-      renderer="antialias: true; colorManagement: true; highRefreshRate: true;"
+      renderer="antialias: true; colorManagement: true;"
       cursor="rayOrigin: mouse" 
-      raycaster="objects: [tour-logic]">
+      raycaster="objects: .clickable">
       
       <a-assets>
         <img id="img-entrada" src="imagenes/Entrada.jpeg">
@@ -215,7 +339,9 @@
         <img id="img-entradaCapilla" src="imagenes/EntradaCapilla.jpeg">
       </a-assets>
 
-      <a-sky id="cielo" radius="500" rotation="0 -90 0"></a-sky>
+      <a-sky id="cielo-fondo" radius="500" rotation="0 -90 0" class="clickable" captura-coordenadas></a-sky>
+      
+      <a-sky id="cielo-frente" radius="490" rotation="0 -90 0" opacity="0" material="transparent: true" captura-coordenadas></a-sky>
 
       <a-entity id="flechas-container"></a-entity>
 
@@ -223,11 +349,15 @@
         <a-camera id="camara-principal" 
                   wasd-controls-enabled="false" 
                   look-controls="reverseMouseDrag: true">
-            <a-cursor color="yellow" scale="0.5 0.5 0.5"></a-cursor>
+            <a-cursor 
+                color="#FFD700" 
+                scale="2 2 2"
+                raycaster="objects: .clickable; far: 10000"
+                fuse="false">
+            </a-cursor>
         </a-camera>
       </a-entity>
 
     </a-scene>
   </body>
 </html>
-
