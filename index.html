@@ -2,57 +2,29 @@
 <html lang="es">
   <head>
     <meta charset="utf-8">
-    <title>Tour Virtual - Transición Suave</title>
+    <title>Tour Virtual ESAN - Final</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
-    <style>
-      #info-panel {
-        position: fixed; top: 20px; left: 20px;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 20px; border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        z-index: 9999; font-family: sans-serif;
-        width: 320px; border: 2px solid #007bff; text-align: center;
-      }
-      #coords-display {
-        font-size: 20px; font-weight: bold; color: #d00;
-        display: block; margin: 15px 0; background: #f0f0f0;
-        padding: 10px; border: 1px dashed #666; user-select: text; 
-      }
-      .btn {
-        background: #007bff; color: white; border: none; padding: 10px 20px;
-        border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%;
-      }
-      .btn:hover { background: #0056b3; }
-      .instrucciones { font-size: 13px; color: #444; margin-bottom: 10px; text-align: left;}
-    </style>
-
     <script>
+      /*
       // =============================================================
-      // 1. HERRAMIENTA DE CALIBRACIÓN (Misma lógica 20m)
+      // 1. HERRAMIENTA DE CALIBRACIÓN (COMENTADA)
       // =============================================================
       AFRAME.registerComponent('captura-coordenadas', {
         init: function () {
           this.el.addEventListener('click', function (evt) {
-            // Evitamos capturar clics si el objeto no es visible (durante transiciones)
             if (this.getAttribute('material').opacity < 0.1) return;
-
             var p = evt.detail.intersection.point;
             var distanciaActual = Math.sqrt(p.x*p.x + p.z*p.z);
             var distanciaDeseada = 20; 
             var factor = distanciaDeseada / distanciaActual;
-
             var x = (p.x * factor).toFixed(2);
             var z = (p.z * factor).toFixed(2);
             var coordTexto = `${x} -1 ${z}`;
-
             var display = document.getElementById('coords-display');
             if(display) display.innerText = coordTexto;
-
-            // Limpiar marcadores viejos
             var viejos = document.querySelectorAll('.marcador-temp');
             viejos.forEach(v => v.parentNode.removeChild(v));
-
             var marker = document.createElement('a-entity');
             marker.classList.add('marcador-temp');
             marker.setAttribute('geometry', 'primitive: sphere; radius: 0.5');
@@ -62,19 +34,24 @@
           });
         }
       });
+      */
 
       // =============================================================
-      // 2. LÓGICA DEL TOUR CON TRANSICIÓN
+      // 2. LÓGICA DEL TOUR CON TRANSICIÓN SUAVE
       // =============================================================
       AFRAME.registerComponent('tour-logic', {
         init: function () {
           var el = this.el;
+          
+          // Evento Click (funciona con Láser y con Mouse)
           el.addEventListener('click', function (evt) {
             var target = el.getAttribute('data-target');
             if (target && target !== "null") {
               iniciarTransicion(target);
             }
           });
+
+          // Efectos Visuales (Hover)
           el.addEventListener('mouseenter', function () {
             el.setAttribute('scale', '1.5 1.5 1.5'); 
             el.setAttribute('material', 'color: #FFD700; opacity: 1'); 
@@ -87,7 +64,7 @@
       });
 
       // =============================================================
-      // 3. BASE DE DATOS DE ESCENAS
+      // 3. BASE DE DATOS DE ESCENAS (Tus coordenadas)
       // =============================================================
       const escenas = {
         'entrada': {
@@ -196,66 +173,45 @@
       // =============================================================
       // FUNCIÓN DE TRANSICIÓN SUAVE (CROSS-DISSOLVE)
       // =============================================================
-      // Variable para saber si el "Frente" es opaco o transparente
       let capaFrenteVisible = false; 
 
       function iniciarTransicion(nombreEscena) {
         var datos = escenas[nombreEscena];
         
-        // 1. Ocultar flechas actuales para que no molesten durante la transición
+        // Ocultar flechas durante transición
         var contenedor = document.querySelector('#flechas-container');
         contenedor.setAttribute('visible', 'false');
 
-        // Referencias a las dos esferas
         var cieloFondo = document.querySelector('#cielo-fondo');
         var cieloFrente = document.querySelector('#cielo-frente');
 
-        // 2. Lógica de "Cover & Reveal" (Cubrir y Revelar)
         if (capaFrenteVisible) {
-          // Si el FRENTE es visible, cargamos la nueva foto en el FONDO
-          // y desvanecemos el FRENTE (Opacity 1 -> 0) para revelar el fondo.
           cieloFondo.setAttribute('src', datos.imagen);
-          
           cieloFrente.setAttribute('animation', {
             property: 'material.opacity',
             to: 0,
-            dur: 1000, // Duración 1 segundo
+            dur: 1000, 
             easing: 'linear'
           });
-          
-          // Desactivamos clics en la capa que desaparece
+          // Importante: Quitar clase clickable al que se oculta
           cieloFrente.classList.remove('clickable');
           cieloFondo.classList.add('clickable');
-          
           capaFrenteVisible = false;
-
         } else {
-          // Si vemos el FONDO, cargamos la foto en el FRENTE
-          // y hacemos aparecer el FRENTE (Opacity 0 -> 1) para cubrir el fondo.
           cieloFrente.setAttribute('src', datos.imagen);
-          
           cieloFrente.setAttribute('animation', {
             property: 'material.opacity',
             to: 1,
             dur: 1000,
             easing: 'linear'
           });
-
           cieloFrente.classList.add('clickable');
           cieloFondo.classList.remove('clickable');
-
           capaFrenteVisible = true;
         }
 
-        // 3. Cuando termine la transición (1000ms), actualizar flechas y cámara
         setTimeout(() => {
-          // Resetear cámara (opcional, si quieres que siempre mire al frente al llegar)
-          // document.querySelector('#camara-principal').setAttribute('position', '0 1.6 0');
-          
-          // Generar nuevas flechas
           generarFlechas(datos.flechas);
-          
-          // Mostrar flechas
           contenedor.setAttribute('visible', 'true');
         }, 1000);
       }
@@ -271,6 +227,8 @@
           entidad.setAttribute('position', flecha.position);
           entidad.setAttribute('material', 'color: #FFF; opacity: 0.8');
           entidad.setAttribute('data-target', flecha.target);
+          
+          // La clase clickable es VITAL para que el rayo láser detecte la flecha
           entidad.setAttribute('class', 'clickable'); 
           entidad.setAttribute('tour-logic', ''); 
           contenedor.appendChild(entidad);
@@ -283,39 +241,14 @@
       }
 
       window.onload = function() { 
-        // Cargar escena inicial directamente en el fondo
         var datos = escenas['entrada'];
         document.querySelector('#cielo-fondo').setAttribute('src', datos.imagen);
         generarFlechas(datos.flechas);
-
-        // Copiar coordenadas
-        document.getElementById('btn-copy').addEventListener('click', function() {
-            var texto = document.getElementById('coords-display').innerText;
-            navigator.clipboard.writeText(texto);
-            var btn = document.getElementById('btn-copy');
-            btn.innerText = "¡COPIADO!";
-            btn.style.background = "#28a745";
-            setTimeout(() => {
-                btn.innerText = "COPIAR COORDENADA";
-                btn.style.background = "#007bff";
-            }, 1000);
-        });
       };
     </script>
   </head>
   
   <body>
-    <div id="info-panel">
-      <h3>🎯 Calibrador (Radio: 20m)</h3>
-      <div class="instrucciones">
-        1. Apunta con el círculo amarillo.<br>
-        2. Haz clic izquierdo.<br>
-        3. Copia el resultado:
-      </div>
-      <span id="coords-display">0 -1 0</span>
-      <button id="btn-copy" class="btn">COPIAR COORDENADA</button>
-    </div>
-
     <a-scene 
       renderer="antialias: true; colorManagement: true;"
       cursor="rayOrigin: mouse" 
@@ -339,23 +272,23 @@
         <img id="img-entradaCapilla" src="imagenes/EntradaCapilla.jpeg">
       </a-assets>
 
-      <a-sky id="cielo-fondo" radius="500" rotation="0 -90 0" class="clickable" captura-coordenadas></a-sky>
-      
-      <a-sky id="cielo-frente" radius="490" rotation="0 -90 0" opacity="0" material="transparent: true" captura-coordenadas></a-sky>
+      <a-sky id="cielo-fondo" radius="500" rotation="0 -90 0"></a-sky>
+      <a-sky id="cielo-frente" radius="490" rotation="0 -90 0" opacity="0" material="transparent: true"></a-sky>
 
       <a-entity id="flechas-container"></a-entity>
 
       <a-entity id="rig" position="0 1.6 0">
+        
         <a-camera id="camara-principal" 
                   wasd-controls-enabled="false" 
                   look-controls="reverseMouseDrag: true">
-            <a-cursor 
-                color="#FFD700" 
-                scale="2 2 2"
-                raycaster="objects: .clickable; far: 10000"
-                fuse="false">
-            </a-cursor>
         </a-camera>
+
+        <a-entity 
+            laser-controls="hand: right" 
+            raycaster="objects: .clickable; lineColor: #FF0000; lineOpacity: 0.7">
+        </a-entity>
+
       </a-entity>
 
     </a-scene>
