@@ -3,23 +3,34 @@
   <head>
     <meta charset="utf-8">
     <title>Tour ESAN 360</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
     <script>
+      // =============================================================
+      // 1. LÓGICA DEL TOUR
+      // =============================================================
       AFRAME.registerComponent('tour-logic', {
         init: function () {
           var el = this.el;
           
+          // CLICK: Navegar
           el.addEventListener('click', function (evt) {
             var target = el.getAttribute('data-target');
+
+            // --- NUEVO ---
+            // Obtenemos la rotación Y de la propia flecha. 
+            // Esto nos dice hacia "dónde" apunta en grados.
             var rotacionFlecha = el.getAttribute('rotation');
             var anguloDestino = rotacionFlecha ? rotacionFlecha.y : 0;
+            // -------------
 
             if (target && target !== "null") {
+              // Pasamos el objetivo Y el ángulo al que queremos mirar
               iniciarTransicion(target, anguloDestino);
             }
           });
 
+          // HOVER: Efecto visual
           el.addEventListener('mouseenter', function () {
             var current = el.getAttribute('scale');
             el.setAttribute('scale', {x: current.x * 1.2, y: current.y * 1.2, z: current.z * 1.2});
@@ -40,24 +51,23 @@
       });
 
       // =============================================================
-      // CAMBIO IMPORTANTE 1: REFERENCIAS DIRECTAS A ARCHIVOS
-      // Ya no usamos IDs (#img-...), usamos la ruta del archivo.
-      // Esto evita que A-Frame intente cargar todo al inicio.
+      // 2. BASE DE DATOS DE ESCENAS (Tus datos)
       // =============================================================
-      const escenas = {
+       const escenas = {
         'entrada': {
-          imagen: 'imagenes/Entrada.jpeg', // Ruta directa
+          imagen: '#img-entrada',
+          // Nota: la flecha aquí apunta a 100 grados
           flechas: [ { target: 'entrada2', position: '19.82 -1 2.64', rotation: '0 100 0' } ]
         },
         'entrada2': {
-          imagen: 'imagenes/Entrada2.jpeg',
+          imagen: '#img-entrada2',
           flechas: [
             { target: 'selector1', position: '-15.31 -1 12.86', rotation: '0 -30 0' },
             { target: 'entrada', position: '17.26 -1 -10.10', rotation: '0 150 0' }
           ]
         },
         'selector1': {
-          imagen: 'imagenes/Selector1.jpeg',
+          imagen: '#img-selector1',
           flechas: [
             { target: 'pasajeServicioAcademico', position: '19.99 -1 -0.67', rotation: '0 100 0' },
             { target: 'entradaGTH', position: '-10.52 -1 -17.01', rotation: '0 -140 0' },
@@ -65,28 +75,28 @@
           ]
         },
         'pasajeServicioAcademico': {
-          imagen: 'imagenes/PasajeServicioAcademico.jpeg',
+          imagen: '#img-pasajeServicioAcademico',
           flechas: [
             { target: 'comedor2doPiso', position: '14.88 -1 13.36', rotation: '0 85 0' },
             { target: 'selector1', position: '6.66 -1 -18.86', rotation: '0 180 0' }
           ]
         },
         'comedor2doPiso': {
-          imagen: 'imagenes/Comedor2doPiso.jpeg',
+          imagen: '#img-comedor2doPiso',
           flechas: [
             { target: 'edificioD', position: '-19.95 -1 1.47', rotation: '0 -40 0' },
             { target: 'pasajeServicioAcademico', position: '19.34 -1 -5.08', rotation: '0 130 0' }
           ]
         },
         'edificioD': {
-          imagen: 'imagenes/EdificioD.jpeg',
+          imagen: '#img-edificioD',
           flechas: [
             { target: 'edificioA', position: '-19.21 -1 5.57', rotation: '0 -50 0' },
             { target: 'comedor2doPiso', position: '19.94 -1 -1.60', rotation: '0 130 0' }
           ]
         },
         'edificioA': {
-          imagen: 'imagenes/EdificioA.jpeg',
+          imagen: '#img-edificioA',
           flechas: [
             { target: 'cafeteria', position: '18.65 -1 7.21', rotation: '0 130 0' },
             { target: 'pabellonA', position: '-18.50 -1 7.61', rotation: '0 -45 0' },
@@ -94,108 +104,121 @@
           ]
         },
         'cafeteria': {
-          imagen: 'imagenes/Cafeteria.jpeg',
+          imagen: '#img-cafeteria',
           flechas: [
             { target: 'explanadaConvention', position: '-8.38 -1 -18.16', rotation: '0 -125 0' },
             { target: 'edificioA', position: '6.47 -1 18.93', rotation: '0 55 0' }
           ]
         },
         'explanadaConvention': {
-          imagen: 'imagenes/ExplanadaConvention.jpeg',
+          imagen: '#img-explanadaConvention',
           flechas: [
             { target: 'cafeteria', position: '10.52 -1 -17.01', rotation: '0 180 0' }
           ]
         },
         'pabellonA': {
-          imagen: 'imagenes/PabellonA.jpeg',
+          imagen: '#img-pabellonA',
           flechas: [
             { target: 'edificioA', position: '-12.48 -1 15.63', rotation: '0 0 0' }
           ]
         },
         'entradaGTH': {
-          imagen: 'imagenes/EntradaGTH.jpeg',
+          imagen: '#img-entradaGTH',
           flechas: [
             { target: 'accesoGTH', position: '-20.00 -1 0.05', rotation: '0 -65 0' },
             { target: 'selector1', position: '-0.05 -1 20.00', rotation: '0 25 0' }
           ]
         },
         'accesoGTH': {
-          imagen: 'imagenes/AccesoGTH.jpeg',
+          imagen: '#img-accesoGTH',
           flechas: [
             { target: 'aulasAyB', position: '3.28 -1 -19.73', rotation: '0 -150 0' },
             { target: 'entradaGTH', position: '-1.37 -1 19.95', rotation: '0 35 0' }
           ]
         },
         'aulasAyB': {
-          imagen: 'imagenes/AulasAyB.jpeg',
+          imagen: '#img-aulasAyB',
           flechas: [
             { target: 'salidaAreasVerdes', position: '-17.38 -1 9.90', rotation: '0 -30 0' },
             { target: 'accesoGTH', position: '17.33 -1 -9.97', rotation: '0 140 0' }
           ]
         },
         'salidaAreasVerdes': {
-          imagen: 'imagenes/SalidaAreasVerdes.jpeg',
+          imagen: '#img-salidaAreasVerdes',
           flechas: [
             { target: 'entradaCapilla', position: '15.97 -1 -12.04', rotation: '0 150 0' },
             { target: 'aulasAyB', position: '10.72 -1 16.89', rotation: '0 50 0' }
           ]
         },
         'entradaCapilla': {
-          imagen: 'imagenes/EntradaCapilla.jpeg',
+          imagen: '#img-entradaCapilla',
           flechas: [
             { target: 'salidaAreasVerdes', position: '1.92 -1 -19.91', rotation: '0 180 0' }
           ]
         }
       };
 
+      // =============================================================
+      // 3. FUNCIÓN DE TRANSICIÓN CON GIRO FORZADO SUAVE
+      // =============================================================
+      // Ahora acepta el anguloDestino
       function iniciarTransicion(nombreEscena, anguloDestino) {
         var datos = escenas[nombreEscena];
         var contenedorFlechas = document.querySelector('#flechas-container');
         var cieloFondo = document.querySelector('#cielo-fondo'); 
         var cieloFrente = document.querySelector('#cielo-frente');
-        var rig = document.querySelector('#rig');
-        var cam = document.querySelector('#camara-principal');
+        var rig = document.querySelector('#rig'); // El contenedor de la cámara
         
-        var duracionTransicion = 1000;
+        var duracionTransicion = 1000; // 1 segundo para que sea suave
 
+        // 1. Ocultar flechas
         contenedorFlechas.setAttribute('visible', 'false');
 
-        // Efecto Zoom
-        cam.setAttribute('animation', {property: 'fov', from: 80, to: 75, dur: 300, easing: 'easeOutQuad'});
-
-        // Asignar nueva imagen (se carga en este momento)
+        // 2. Preparar imagen nueva en el frente (invisible)
         cieloFrente.setAttribute('src', datos.imagen);
         
+        // 3. Iniciar el Cross-Fade Visual
         cieloFrente.setAttribute('animation__fade', {
             property: 'material.opacity',
-            from: 0, to: 1, dur: duracionTransicion, easing: 'easeInOutQuad'
+            from: 0,
+            to: 1,
+            dur: duracionTransicion,
+            easing: 'easeInOutQuad' // Suavizado al inicio y final
         });
 
-        // Giro suave forzado
+        // 4. --- EL TRUCO DEL GIRO ---
+        // Animamos la rotación del RIG (no de la cámara directamente)
+        // para que coincida con el ángulo de la flecha seleccionada.
+        // Usamos la misma duración y easing que el fade visual.
         rig.setAttribute('animation__rotacion', {
             property: 'rotation',
+            // Mantenemos X y Z en 0, solo rotamos Y (horizontal)
             to: `0 ${anguloDestino} 0`,
             dur: duracionTransicion,
             easing: 'easeInOutQuad'
         });
+        // ---------------------------
 
+        // 5. Cuando termina la animación...
         setTimeout(() => {
+            // A. Intercambio de imágenes
             cieloFondo.setAttribute('src', datos.imagen);
             cieloFrente.removeAttribute('animation__fade');
             cieloFrente.setAttribute('material', 'opacity', 0);
-            
-            // Importante: Liberar memoria de la imagen anterior si es posible
-            // (A-Frame lo maneja internamente, pero el cambio de src ayuda)
-            
+
+            // B. Limpiamos la animación de rotación del rig para no acumularlas
             rig.removeAttribute('animation__rotacion');
 
+            // C. Generar las nuevas flechas
             generarFlechas(datos.flechas);
             contenedorFlechas.setAttribute('visible', 'true');
-            cam.setAttribute('animation', {property: 'fov', to: 80, dur: 500});
             
-        }, duracionTransicion + 50);
+        }, duracionTransicion + 50); // Pequeño margen de seguridad
       }
 
+      // =============================================================
+      // 4. GENERADOR DE FLECHAS
+      // =============================================================
       function generarFlechas(listaFlechas) {
         var contenedor = document.querySelector('#flechas-container');
         contenedor.innerHTML = '';
@@ -205,6 +228,8 @@
           entidad.setAttribute('gltf-model', '#modelo-flecha');
           entidad.setAttribute('scale', '20 20 20'); 
           entidad.setAttribute('position', flecha.position);
+          
+          // Importante: Esta rotación se usará para guiar la cámara
           entidad.setAttribute('rotation', `0 ${parseRotation(flecha.rotation)} 0`); 
           
           entidad.addEventListener('model-loaded', function(){
@@ -231,7 +256,6 @@
         return parseFloat(rotString.split(' ')[1]) || 0;
       }
 
-      // Pre-cargar solo la imagen inicial
       window.onload = function() { 
         var datos = escenas['entrada'];
         document.querySelector('#cielo-fondo').setAttribute('src', datos.imagen);
@@ -242,19 +266,35 @@
   
   <body>
     <a-scene 
-      renderer="antialias: false; colorManagement: true; sortObjects: true; precision: mediump;"
+      renderer="antialias: true; colorManagement: true; sortObjects: true;"
       cursor="rayOrigin: mouse" 
       raycaster="objects: .clickable">
       
-      <a-assets timeout="10000">
+      <a-assets>
+        <img id="img-entrada" src="imagenes/Entrada.jpeg">
+        <img id="img-entrada2" src="imagenes/Entrada2.jpeg">
+        <img id="img-selector1" src="imagenes/Selector1.jpeg">
+        <img id="img-pasajeServicioAcademico" src="imagenes/PasajeServicioAcademico.jpeg">
+        <img id="img-comedor2doPiso" src="imagenes/Comedor2doPiso.jpeg">
+        <img id="img-edificioD" src="imagenes/EdificioD.jpeg">
+        <img id="img-edificioA" src="imagenes/EdificioA.jpeg">
+        <img id="img-cafeteria" src="imagenes/Cafeteria.jpeg">
+        <img id="img-explanadaConvention" src="imagenes/ExplanadaConvention.jpeg">
+        <img id="img-pabellonA" src="imagenes/PabellonA.jpeg">
+        <img id="img-entradaGTH" src="imagenes/EntradaGTH.jpeg">
+        <img id="img-accesoGTH" src="imagenes/AccesoGTH.jpeg">
+        <img id="img-aulasAyB" src="imagenes/AulasAyB.jpeg">
+        <img id="img-salidaAreasVerdes" src="imagenes/SalidaAreasVerdes.jpeg">
+        <img id="img-entradaCapilla" src="imagenes/EntradaCapilla.jpeg">
+
         <a-asset-item id="modelo-flecha" src="imagenes/flecha.glb"></a-asset-item>
-        <img id="img-entrada-preload" src="imagenes/Entrada.jpeg"> 
       </a-assets>
 
       <a-sky id="cielo-fondo" radius="500" rotation="0 -90 0"></a-sky>
       <a-sky id="cielo-frente" radius="490" rotation="0 -90 0" material="opacity: 0; transparent: true"></a-sky>
 
       <a-light type="ambient" color="#FFF" intensity="1.5"></a-light>
+
       <a-entity id="flechas-container"></a-entity>
 
       <a-entity id="rig" position="0 1.6 0" rotation="0 0 0">
