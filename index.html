@@ -2,48 +2,18 @@
 <html lang="es">
   <head>
     <meta charset="utf-8">
-    <title>Tour Virtual ESAN - Final</title>
+    <title>Tour ESAN 360</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
     <script>
-      /*
       // =============================================================
-      // 1. HERRAMIENTA DE CALIBRACIÓN (COMENTADA)
-      // =============================================================
-      AFRAME.registerComponent('captura-coordenadas', {
-        init: function () {
-          this.el.addEventListener('click', function (evt) {
-            if (this.getAttribute('material').opacity < 0.1) return;
-            var p = evt.detail.intersection.point;
-            var distanciaActual = Math.sqrt(p.x*p.x + p.z*p.z);
-            var distanciaDeseada = 20; 
-            var factor = distanciaDeseada / distanciaActual;
-            var x = (p.x * factor).toFixed(2);
-            var z = (p.z * factor).toFixed(2);
-            var coordTexto = `${x} -1 ${z}`;
-            var display = document.getElementById('coords-display');
-            if(display) display.innerText = coordTexto;
-            var viejos = document.querySelectorAll('.marcador-temp');
-            viejos.forEach(v => v.parentNode.removeChild(v));
-            var marker = document.createElement('a-entity');
-            marker.classList.add('marcador-temp');
-            marker.setAttribute('geometry', 'primitive: sphere; radius: 0.5');
-            marker.setAttribute('material', 'color: red; emissive: #FF0000; emissiveIntensity: 0.5');
-            marker.setAttribute('position', `${x} -1 ${z}`);
-            document.querySelector('a-scene').appendChild(marker);
-          });
-        }
-      });
-      */
-
-      // =============================================================
-      // 2. LÓGICA DEL TOUR CON TRANSICIÓN SUAVE
+      // 1. LÓGICA DEL TOUR
       // =============================================================
       AFRAME.registerComponent('tour-logic', {
         init: function () {
           var el = this.el;
           
-          // Evento Click (funciona con Láser y con Mouse)
+          // CLICK: Navegar
           el.addEventListener('click', function (evt) {
             var target = el.getAttribute('data-target');
             if (target && target !== "null") {
@@ -51,75 +21,91 @@
             }
           });
 
-          // Efectos Visuales (Hover)
+          // HOVER: Efecto visual (Mouse encima)
           el.addEventListener('mouseenter', function () {
-            el.setAttribute('scale', '1.5 1.5 1.5'); 
-            el.setAttribute('material', 'color: #FFD700; opacity: 1'); 
+            var current = el.getAttribute('scale');
+            el.setAttribute('scale', {x: current.x * 1.2, y: current.y * 1.2, z: current.z * 1.2});
+            
+            const mesh = el.getObject3D('mesh');
+            if (mesh) {
+                mesh.traverse(node => {
+                    // Iluminar un poco la flecha al pasar el mouse
+                    if (node.isMesh) node.material.emissive.set('#550000');
+                });
+            }
           });
+
+          // LEAVE: Quitar efecto (Mouse sale)
           el.addEventListener('mouseleave', function () {
-            el.setAttribute('scale', '1 1 1');
-            el.setAttribute('material', 'color: #FFF; opacity: 0.8');
+            el.setAttribute('scale', '20 20 20'); 
+            
+            const mesh = el.getObject3D('mesh');
+            if (mesh) {
+                mesh.traverse(node => {
+                    if (node.isMesh) node.material.emissive.set('#000000');
+                });
+            }
           });
         }
       });
 
       // =============================================================
-      // 3. BASE DE DATOS DE ESCENAS (Tus coordenadas)
+      // 2. BASE DE DATOS DE ESCENAS
       // =============================================================
       const escenas = {
         'entrada': {
           imagen: '#img-entrada',
-          flechas: [ { target: 'entrada2', position: '19.82 -1 2.64', rotation: '0 0 0' } ]
+          flechas: [ { target: 'entrada2', position: '19.82 -1 2.64', rotation: '0 100 0' } ]
         },
         'entrada2': {
           imagen: '#img-entrada2',
           flechas: [
-            { target: 'selector1', position: '-15.31 -1 12.86', rotation: '0 0 0' },
-            { target: 'entrada', position: '17.26 -1 -10.10', rotation: '0 180 0' }
+            { target: 'selector1', position: '-15.31 -1 12.86', rotation: '0 -30 0' },
+            { target: 'entrada', position: '17.26 -1 -10.10', rotation: '0 150 0' }
           ]
         },
         'selector1': {
           imagen: '#img-selector1',
           flechas: [
-            { target: 'pasajeServicioAcademico', position: '19.99 -1 -0.67', rotation: '0 45 0' },
-            { target: 'entradaGTH', position: '-10.52 -1 -17.01', rotation: '0 -45 0' },
-            { target: 'entrada2', position: '-13.28 -1 14.96', rotation: '0 180 0' }
+            { target: 'pasajeServicioAcademico', position: '19.99 -1 -0.67', rotation: '0 100 0' },
+            { target: 'entradaGTH', position: '-10.52 -1 -17.01', rotation: '0 -140 0' },
+            { target: 'entrada2', position: '-13.28 -1 14.96', rotation: '0 -20 0' }
           ]
         },
         'pasajeServicioAcademico': {
           imagen: '#img-pasajeServicioAcademico',
           flechas: [
-            { target: 'comedor2doPiso', position: '14.88 -1 13.36', rotation: '0 0 0' },
+            { target: 'comedor2doPiso', position: '14.88 -1 13.36', rotation: '0 85 0' },
             { target: 'selector1', position: '6.66 -1 -18.86', rotation: '0 180 0' }
           ]
         },
         'comedor2doPiso': {
           imagen: '#img-comedor2doPiso',
           flechas: [
-            { target: 'edificioD', position: '-19.95 -1 1.47', rotation: '0 0 0' },
-            { target: 'pasajeServicioAcademico', position: '19.34 -1 -5.08', rotation: '0 180 0' }
+            { target: 'edificioD', position: '-19.95 -1 1.47', rotation: '0 -40 0' },
+            { target: 'pasajeServicioAcademico', position: '19.34 -1 -5.08', rotation: '0 130 0' }
           ]
         },
         'edificioD': {
           imagen: '#img-edificioD',
           flechas: [
-            { target: 'edificioA', position: '-19.21 -1 5.57', rotation: '0 0 0' },
-            { target: 'comedor2doPiso', position: '19.94 -1 -1.60', rotation: '0 180 0' }
+            { target: 'edificioA', position: '-19.21 -1 5.57', rotation: '0 -50 0' },
+            { target: 'comedor2doPiso', position: '19.94 -1 -1.60', rotation: '0 130 0' }
           ]
         },
         'edificioA': {
           imagen: '#img-edificioA',
           flechas: [
-            { target: 'cafeteria', position: '18.65 -1 7.21', rotation: '0 45 0' },
+            { target: 'cafeteria', position: '18.65 -1 7.21', rotation: '0 130 0' },
             { target: 'pabellonA', position: '-18.50 -1 7.61', rotation: '0 -45 0' },
-            { target: 'edificioD', position: '-7.46 -1 -18.56', rotation: '0 180 0' }
+            { target: 'edificioD', position: '-7.46 -1 -18.56', rotation: '0 220 0' }
           ]
         },
         'cafeteria': {
           imagen: '#img-cafeteria',
           flechas: [
-            { target: 'explanadaConvention', position: '-8.38 -1 -18.16', rotation: '0 0 0' },
-            { target: 'edificioA', position: '6.47 -1 18.93', rotation: '0 180 0' }
+            { target: 'explanadaConvention', position: '-8.38 -1 -18.16', rotation: '0 -125 0' },
+            { target: 'edificioA', position: '6.47 -1 18.93', rotation: '0 55 0' }
           ]
         },
         'explanadaConvention': {
@@ -131,35 +117,35 @@
         'pabellonA': {
           imagen: '#img-pabellonA',
           flechas: [
-            { target: 'edificioA', position: '-12.48 -1 15.63', rotation: '0 180 0' }
+            { target: 'edificioA', position: '-12.48 -1 15.63', rotation: '0 0 0' }
           ]
         },
         'entradaGTH': {
           imagen: '#img-entradaGTH',
           flechas: [
-            { target: 'accesoGTH', position: '-20.00 -1 0.05', rotation: '0 0 0' },
-            { target: 'selector1', position: '-0.05 -1 20.00', rotation: '0 180 0' }
+            { target: 'accesoGTH', position: '-20.00 -1 0.05', rotation: '0 -65 0' },
+            { target: 'selector1', position: '-0.05 -1 20.00', rotation: '0 25 0' }
           ]
         },
         'accesoGTH': {
           imagen: '#img-accesoGTH',
           flechas: [
-            { target: 'aulasAyB', position: '3.28 -1 -19.73', rotation: '0 0 0' },
-            { target: 'entradaGTH', position: '-1.37 -1 19.95', rotation: '0 180 0' }
+            { target: 'aulasAyB', position: '3.28 -1 -19.73', rotation: '0 -150 0' },
+            { target: 'entradaGTH', position: '-1.37 -1 19.95', rotation: '0 35 0' }
           ]
         },
         'aulasAyB': {
           imagen: '#img-aulasAyB',
           flechas: [
-            { target: 'salidaAreasVerdes', position: '-17.38 -1 9.90', rotation: '0 0 0' },
-            { target: 'accesoGTH', position: '17.33 -1 -9.97', rotation: '0 180 0' }
+            { target: 'salidaAreasVerdes', position: '-17.38 -1 9.90', rotation: '0 -30 0' },
+            { target: 'accesoGTH', position: '17.33 -1 -9.97', rotation: '0 140 0' }
           ]
         },
         'salidaAreasVerdes': {
           imagen: '#img-salidaAreasVerdes',
           flechas: [
-            { target: 'entradaCapilla', position: '15.97 -1 -12.04', rotation: '0 0 0' },
-            { target: 'aulasAyB', position: '10.72 -1 16.89', rotation: '0 180 0' }
+            { target: 'entradaCapilla', position: '15.97 -1 -12.04', rotation: '0 150 0' },
+            { target: 'aulasAyB', position: '10.72 -1 16.89', rotation: '0 50 0' }
           ]
         },
         'entradaCapilla': {
@@ -171,73 +157,100 @@
       };
 
       // =============================================================
-      // FUNCIÓN DE TRANSICIÓN SUAVE (CROSS-DISSOLVE)
+      // 3. FUNCIÓN DE TRANSICIÓN TIPO "STREET VIEW"
       // =============================================================
-      let capaFrenteVisible = false; 
-
       function iniciarTransicion(nombreEscena) {
         var datos = escenas[nombreEscena];
+        var contenedorFlechas = document.querySelector('#flechas-container');
         
-        // Ocultar flechas durante transición
-        var contenedor = document.querySelector('#flechas-container');
-        contenedor.setAttribute('visible', 'false');
+        // Elementos de Cielo
+        var cieloFondo = document.querySelector('#cielo-fondo'); // La imagen actual
+        var cieloFrente = document.querySelector('#cielo-frente'); // La imagen nueva (transparente por ahora)
+        
+        // Efecto Zoom (Opcional, da sensación de avance)
+        var cam = document.querySelector('#camara-principal');
+        cam.setAttribute('animation', {property: 'fov', from: 80, to: 75, dur: 300, easing: 'easeOutQuad'});
 
-        var cieloFondo = document.querySelector('#cielo-fondo');
-        var cieloFrente = document.querySelector('#cielo-frente');
+        // 1. Ocultar flechas para limpiar la vista
+        contenedorFlechas.setAttribute('visible', 'false');
 
-        if (capaFrenteVisible) {
-          cieloFondo.setAttribute('src', datos.imagen);
-          cieloFrente.setAttribute('animation', {
+        // 2. Preparar la nueva imagen en la esfera frontal (invisible aun)
+        cieloFrente.setAttribute('src', datos.imagen);
+        
+        // 3. Iniciar Disolvencia (Cross-Fade)
+        // La esfera del frente (nueva) aparece SUAVEMENTE sobre la vieja.
+        // Al estar un poco más cerca (radio 490 vs 500), tapa perfectamente a la anterior sin parpadeos.
+        cieloFrente.setAttribute('animation', {
             property: 'material.opacity',
-            to: 0,
-            dur: 1000, 
-            easing: 'linear'
-          });
-          // Importante: Quitar clase clickable al que se oculta
-          cieloFrente.classList.remove('clickable');
-          cieloFondo.classList.add('clickable');
-          capaFrenteVisible = false;
-        } else {
-          cieloFrente.setAttribute('src', datos.imagen);
-          cieloFrente.setAttribute('animation', {
-            property: 'material.opacity',
+            from: 0,
             to: 1,
-            dur: 1000,
+            dur: 800, // Duración suave (0.8 segundos)
             easing: 'linear'
-          });
-          cieloFrente.classList.add('clickable');
-          cieloFondo.classList.remove('clickable');
-          capaFrenteVisible = true;
-        }
+        });
 
+        // 4. Cuando termina la animación...
         setTimeout(() => {
-          generarFlechas(datos.flechas);
-          contenedor.setAttribute('visible', 'true');
-        }, 1000);
+            // A. Intercambio técnico: La imagen nueva pasa al fondo para ser la "base"
+            cieloFondo.setAttribute('src', datos.imagen);
+            
+            // B. Reseteamos la esfera del frente para que esté lista para la próxima vez
+            cieloFrente.removeAttribute('animation'); // Quitar animación para resetear manual
+            cieloFrente.setAttribute('material', 'opacity', 0); // Hacerla transparente de nuevo
+
+            // C. Generar las nuevas flechas
+            generarFlechas(datos.flechas);
+            contenedorFlechas.setAttribute('visible', 'true');
+
+            // D. Resetear Zoom
+            cam.setAttribute('animation', {property: 'fov', to: 80, dur: 500});
+
+            // NOTA IMPORTANTE DE DIRECCIÓN:
+            // No tocamos la rotación del 'rig' ni de la cámara.
+            // Esto cumple tu deseo: Si estabas mirando a la flecha, 
+            // seguirás mirando en esa dirección exacta al aparecer la nueva escena.
+            
+        }, 800); // Debe coincidir con el 'dur' de la animación
       }
 
+      // =============================================================
+      // 4. GENERADOR DE FLECHAS
+      // =============================================================
       function generarFlechas(listaFlechas) {
         var contenedor = document.querySelector('#flechas-container');
         contenedor.innerHTML = '';
         
         listaFlechas.forEach(flecha => {
           var entidad = document.createElement('a-entity');
-          entidad.setAttribute('geometry', 'primitive: cone; radiusBottom: 1.0; radiusTop: 0.01; height: 3');
-          entidad.setAttribute('rotation', `90 ${parseRotation(flecha.rotation)} 0`); 
+          entidad.setAttribute('gltf-model', '#modelo-flecha');
+          entidad.setAttribute('scale', '20 20 20'); 
           entidad.setAttribute('position', flecha.position);
-          entidad.setAttribute('material', 'color: #FFF; opacity: 0.8');
-          entidad.setAttribute('data-target', flecha.target);
           
-          // La clase clickable es VITAL para que el rayo láser detecte la flecha
+          // Rotación ajustada
+          entidad.setAttribute('rotation', `0 ${parseRotation(flecha.rotation)} 0`); 
+          
+          // Colorear Modelo GLB
+          entidad.addEventListener('model-loaded', function(){
+             const obj = entidad.getObject3D('mesh');
+             if (!obj) return;
+             obj.traverse(node => {
+                if (node.isMesh) {
+                   node.material.color.set('#FF0000'); // Rojo
+                   node.material.needsUpdate = true;
+                }
+             });
+          });
+          
+          entidad.setAttribute('data-target', flecha.target);
           entidad.setAttribute('class', 'clickable'); 
           entidad.setAttribute('tour-logic', ''); 
+          
           contenedor.appendChild(entidad);
         });
       }
 
       function parseRotation(rotString) {
         if(!rotString) return 0;
-        return rotString.split(' ')[1] || 0;
+        return parseFloat(rotString.split(' ')[1]) || 0;
       }
 
       window.onload = function() { 
@@ -250,7 +263,7 @@
   
   <body>
     <a-scene 
-      renderer="antialias: true; colorManagement: true;"
+      renderer="antialias: true; colorManagement: true; sortObjects: true;"
       cursor="rayOrigin: mouse" 
       raycaster="objects: .clickable">
       
@@ -270,25 +283,22 @@
         <img id="img-aulasAyB" src="imagenes/AulasAyB.jpeg">
         <img id="img-salidaAreasVerdes" src="imagenes/SalidaAreasVerdes.jpeg">
         <img id="img-entradaCapilla" src="imagenes/EntradaCapilla.jpeg">
+
+        <a-asset-item id="modelo-flecha" src="imagenes/flecha.glb"></a-asset-item>
       </a-assets>
 
       <a-sky id="cielo-fondo" radius="500" rotation="0 -90 0"></a-sky>
-      <a-sky id="cielo-frente" radius="490" rotation="0 -90 0" opacity="0" material="transparent: true"></a-sky>
+      
+      <a-sky id="cielo-frente" radius="490" rotation="0 -90 0" material="opacity: 0; transparent: true"></a-sky>
+
+      <a-light type="ambient" color="#FFF" intensity="1.5"></a-light>
+      <a-light type="directional" position="-1 1 0" intensity="0.5"></a-light>
 
       <a-entity id="flechas-container"></a-entity>
 
       <a-entity id="rig" position="0 1.6 0">
-        
-        <a-camera id="camara-principal" 
-                  wasd-controls-enabled="false" 
-                  look-controls="reverseMouseDrag: true">
-        </a-camera>
-
-        <a-entity 
-            laser-controls="hand: right" 
-            raycaster="objects: .clickable; lineColor: #FF0000; lineOpacity: 0.7">
-        </a-entity>
-
+        <a-camera id="camara-principal" fov="80" wasd-controls-enabled="false" look-controls="reverseMouseDrag: true"></a-camera>
+        <a-entity laser-controls="hand: right" raycaster="objects: .clickable; lineColor: #FF0000; lineOpacity: 0.7"></a-entity>
       </a-entity>
 
     </a-scene>
