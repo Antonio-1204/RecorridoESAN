@@ -9,7 +9,7 @@
       #pantalla-carga {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background-color: #00BFFF; /* Azul ESAN aproximado */
+        background-color: #00BFFF;
         z-index: 9999;
         display: flex;
         flex-direction: column;
@@ -17,11 +17,11 @@
         align-items: center;
         color: white;
         font-family: sans-serif;
-        transition: opacity 1s ease; /* Desvanecimiento suave */
+        transition: opacity 1s ease;
       }
       .oculto {
         opacity: 0;
-        pointer-events: none; /* Para que puedas hacer click a través de él */
+        pointer-events: none;
       }
     </style>
     
@@ -36,11 +36,8 @@
           // CLICK: Navegar
           el.addEventListener('click', function (evt) {
             var target = el.getAttribute('data-target');
-            var rotacionFlecha = el.getAttribute('rotation');
-            var anguloDestino = rotacionFlecha ? rotacionFlecha.y : 0;
-
             if (target && target !== "null") {
-              iniciarTransicion(target, anguloDestino);
+              iniciarTransicion(target);
             }
           });
 
@@ -67,13 +64,17 @@
       // =============================================================
       // 2. BASE DE DATOS DE ESCENAS
       // =============================================================
-       const escenas = {
+      // NOTA: He agregado 'rotacionSky'. Por defecto está en '0 -90 0' (tu valor original).
+      // Si al entrar a una escena la imagen no mira a donde quieres, cambia el -90 por 0, 90 o 180.
+      const escenas = {
         'entrada': {
           imagen: '#img-entrada',
+          rotacionSky: '0 -90 0',
           flechas: [ { target: 'entrada2', position: '19.82 -1 2.64', rotation: '0 100 0' } ]
         },
         'entrada2': {
           imagen: '#img-entrada2',
+          rotacionSky: '0 -90 0', 
           flechas: [
             { target: 'selector1', position: '-15.31 -1 12.86', rotation: '0 -30 0' },
             { target: 'entrada', position: '17.26 -1 -10.10', rotation: '0 150 0' }
@@ -81,6 +82,7 @@
         },
         'selector1': {
           imagen: '#img-selector1',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'pasajeServicioAcademico', position: '19.99 -1 -0.67', rotation: '0 100 0' },
             { target: 'entradaGTH', position: '-10.52 -1 -17.01', rotation: '0 -140 0' },
@@ -89,6 +91,7 @@
         },
         'pasajeServicioAcademico': {
           imagen: '#img-pasajeServicioAcademico',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'comedor2doPiso', position: '14.88 -1 13.36', rotation: '0 85 0' },
             { target: 'selector1', position: '6.66 -1 -18.86', rotation: '0 180 0' }
@@ -96,6 +99,7 @@
         },
         'comedor2doPiso': {
           imagen: '#img-comedor2doPiso',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'edificioD', position: '-19.95 -1 1.47', rotation: '0 -40 0' },
             { target: 'pasajeServicioAcademico', position: '19.34 -1 -5.08', rotation: '0 130 0' }
@@ -103,6 +107,7 @@
         },
         'edificioD': {
           imagen: '#img-edificioD',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'edificioA', position: '-19.21 -1 5.57', rotation: '0 -50 0' },
             { target: 'comedor2doPiso', position: '19.94 -1 -1.60', rotation: '0 130 0' }
@@ -110,6 +115,7 @@
         },
         'edificioA': {
           imagen: '#img-edificioA',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'cafeteria', position: '18.65 -1 7.21', rotation: '0 130 0' },
             { target: 'pabellonA', position: '-18.50 -1 7.61', rotation: '0 -45 0' },
@@ -118,6 +124,7 @@
         },
         'cafeteria': {
           imagen: '#img-cafeteria',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'explanadaConvention', position: '-8.38 -1 -18.16', rotation: '0 -125 0' },
             { target: 'edificioA', position: '6.47 -1 18.93', rotation: '0 55 0' }
@@ -125,18 +132,21 @@
         },
         'explanadaConvention': {
           imagen: '#img-explanadaConvention',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'cafeteria', position: '10.52 -1 -17.01', rotation: '0 180 0' }
           ]
         },
         'pabellonA': {
           imagen: '#img-pabellonA',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'edificioA', position: '-12.48 -1 15.63', rotation: '0 0 0' }
           ]
         },
         'entradaGTH': {
           imagen: '#img-entradaGTH',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'accesoGTH', position: '-20.00 -1 0.05', rotation: '0 -65 0' },
             { target: 'selector1', position: '-0.05 -1 20.00', rotation: '0 25 0' }
@@ -144,6 +154,7 @@
         },
         'accesoGTH': {
           imagen: '#img-accesoGTH',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'aulasAyB', position: '3.28 -1 -19.73', rotation: '0 -150 0' },
             { target: 'entradaGTH', position: '-1.37 -1 19.95', rotation: '0 35 0' }
@@ -151,6 +162,7 @@
         },
         'aulasAyB': {
           imagen: '#img-aulasAyB',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'salidaAreasVerdes', position: '-17.38 -1 9.90', rotation: '0 -30 0' },
             { target: 'accesoGTH', position: '17.33 -1 -9.97', rotation: '0 140 0' }
@@ -158,6 +170,7 @@
         },
         'salidaAreasVerdes': {
           imagen: '#img-salidaAreasVerdes',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'entradaCapilla', position: '15.97 -1 -12.04', rotation: '0 150 0' },
             { target: 'aulasAyB', position: '10.72 -1 16.89', rotation: '0 50 0' }
@@ -165,6 +178,7 @@
         },
         'entradaCapilla': {
           imagen: '#img-entradaCapilla',
+          rotacionSky: '0 -90 0',
           flechas: [
             { target: 'salidaAreasVerdes', position: '1.92 -1 -19.91', rotation: '0 180 0' }
           ]
@@ -172,41 +186,67 @@
       };
 
       // =============================================================
-      // 3. FUNCIÓN DE TRANSICIÓN
+      // 3. FUNCIONES DE CÁMARA (NUEVO)
       // =============================================================
-      function iniciarTransicion(nombreEscena, anguloDestino) {
+      function resetearCamara() {
+        var cam = document.getElementById('camara-principal');
+        if (!cam) return;
+
+        // Resetear controles Look (Yaw y Pitch) para mirar al frente (0,0,0)
+        var lookControls = cam.components['look-controls'];
+        if (lookControls) {
+          lookControls.yawObject.rotation.y = 0;
+          lookControls.pitchObject.rotation.x = 0;
+        }
+        
+        // Resetear cualquier rotación residual en la entidad cámara
+        cam.setAttribute('rotation', '0 0 0');
+      }
+
+      // =============================================================
+      // 4. FUNCIÓN DE TRANSICIÓN
+      // =============================================================
+      function iniciarTransicion(nombreEscena) {
         var datos = escenas[nombreEscena];
         var contenedorFlechas = document.querySelector('#flechas-container');
         var cieloFondo = document.querySelector('#cielo-fondo'); 
         var cieloFrente = document.querySelector('#cielo-frente');
-        var rig = document.querySelector('#rig');
         
-        var duracionTransicion = 1000;
+        var duracionTransicion = 1500;
 
+        // 1. Ocultar flechas
         contenedorFlechas.setAttribute('visible', 'false');
 
+        // 2. Definir rotación del cielo (usar default si no existe)
+        var rotacionImagen = datos.rotacionSky || "0 -90 0";
+
+        // 3. Preparar cielo de FRENTE
         cieloFrente.setAttribute('src', datos.imagen);
+        cieloFrente.setAttribute('rotation', rotacionImagen);
+
+        // 4. RESETEAR CÁMARA (Para que mire al frente en la nueva escena)
+        resetearCamara();
         
+        // 5. Animar opacidad
         cieloFrente.setAttribute('animation__fade', {
             property: 'material.opacity',
             from: 0,
             to: 1,
             dur: duracionTransicion,
-            easing: 'easeInOutQuad'
+            easing: 'linear'
         });
 
-        rig.setAttribute('animation__rotacion', {
-            property: 'rotation',
-            to: `0 ${anguloDestino} 0`,
-            dur: duracionTransicion,
-            easing: 'easeInOutQuad'
-        });
-
+        // 6. Finalizar transición
         setTimeout(() => {
+            // Pasar imagen y rotación al fondo
             cieloFondo.setAttribute('src', datos.imagen);
+            cieloFondo.setAttribute('rotation', rotacionImagen);
+            
+            // Resetear frente
             cieloFrente.removeAttribute('animation__fade');
             cieloFrente.setAttribute('material', 'opacity', 0);
-            rig.removeAttribute('animation__rotacion');
+            
+            // Mostrar flechas
             generarFlechas(datos.flechas);
             contenedorFlechas.setAttribute('visible', 'true');
             
@@ -214,7 +254,7 @@
       }
 
       // =============================================================
-      // 4. GENERADOR DE FLECHAS
+      // 5. GENERADOR DE FLECHAS
       // =============================================================
       function generarFlechas(listaFlechas) {
         var contenedor = document.querySelector('#flechas-container');
@@ -252,14 +292,19 @@
       }
 
       // =============================================================
-      // 5. INICIALIZACIÓN Y QUITADO DE PANTALLA DE CARGA
+      // 6. INICIALIZACIÓN
       // =============================================================
       window.onload = function() { 
         var datos = escenas['entrada'];
-        document.querySelector('#cielo-fondo').setAttribute('src', datos.imagen);
+        var cieloFondo = document.querySelector('#cielo-fondo');
+        
+        // Carga inicial
+        cieloFondo.setAttribute('src', datos.imagen);
+        // Aplicar rotación inicial
+        cieloFondo.setAttribute('rotation', datos.rotacionSky || '0 -90 0');
+        
         generarFlechas(datos.flechas);
 
-        // --- NUEVO: ESCUCHAR CUANDO LA ESCENA ESTÉ LISTA ---
         var scene = document.querySelector('a-scene');
         if (scene.hasLoaded) {
             ocultarLoader();
@@ -271,9 +316,7 @@
       function ocultarLoader() {
         var loader = document.getElementById('pantalla-carga');
         if (loader) {
-            // Le agregamos la clase que baja la opacidad a 0
             loader.classList.add('oculto');
-            // Esperamos 1 segundo (la duración de la transición CSS) y lo quitamos del DOM
             setTimeout(() => {
                 loader.style.display = 'none';
             }, 1000);
@@ -315,6 +358,7 @@
       </a-assets>
 
       <a-sky id="cielo-fondo" radius="500" rotation="0 -90 0"></a-sky>
+      
       <a-sky id="cielo-frente" radius="490" rotation="0 -90 0" material="opacity: 0; transparent: true"></a-sky>
 
       <a-light type="ambient" color="#FFF" intensity="1.5"></a-light>
@@ -329,4 +373,3 @@
     </a-scene>
   </body>
 </html>
-
