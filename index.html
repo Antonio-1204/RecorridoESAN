@@ -4,6 +4,26 @@
     <meta charset="utf-8">
     <title>Tour ESAN 360</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+    <style>
+      #pantalla-carga {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: #00BFFF; /* Azul ESAN aproximado */
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-family: sans-serif;
+        transition: opacity 1s ease; /* Desvanecimiento suave */
+      }
+      .oculto {
+        opacity: 0;
+        pointer-events: none; /* Para que puedas hacer click a través de él */
+      }
+    </style>
     
     <script>
       // =============================================================
@@ -16,16 +36,10 @@
           // CLICK: Navegar
           el.addEventListener('click', function (evt) {
             var target = el.getAttribute('data-target');
-
-            // --- NUEVO ---
-            // Obtenemos la rotación Y de la propia flecha. 
-            // Esto nos dice hacia "dónde" apunta en grados.
             var rotacionFlecha = el.getAttribute('rotation');
             var anguloDestino = rotacionFlecha ? rotacionFlecha.y : 0;
-            // -------------
 
             if (target && target !== "null") {
-              // Pasamos el objetivo Y el ángulo al que queremos mirar
               iniciarTransicion(target, anguloDestino);
             }
           });
@@ -51,12 +65,11 @@
       });
 
       // =============================================================
-      // 2. BASE DE DATOS DE ESCENAS (Tus datos)
+      // 2. BASE DE DATOS DE ESCENAS
       // =============================================================
        const escenas = {
         'entrada': {
           imagen: '#img-entrada',
-          // Nota: la flecha aquí apunta a 100 grados
           flechas: [ { target: 'entrada2', position: '19.82 -1 2.64', rotation: '0 100 0' } ]
         },
         'entrada2': {
@@ -159,61 +172,45 @@
       };
 
       // =============================================================
-      // 3. FUNCIÓN DE TRANSICIÓN CON GIRO FORZADO SUAVE
+      // 3. FUNCIÓN DE TRANSICIÓN
       // =============================================================
-      // Ahora acepta el anguloDestino
       function iniciarTransicion(nombreEscena, anguloDestino) {
         var datos = escenas[nombreEscena];
         var contenedorFlechas = document.querySelector('#flechas-container');
         var cieloFondo = document.querySelector('#cielo-fondo'); 
         var cieloFrente = document.querySelector('#cielo-frente');
-        var rig = document.querySelector('#rig'); // El contenedor de la cámara
+        var rig = document.querySelector('#rig');
         
-        var duracionTransicion = 1000; // 1 segundo para que sea suave
+        var duracionTransicion = 1000;
 
-        // 1. Ocultar flechas
         contenedorFlechas.setAttribute('visible', 'false');
 
-        // 2. Preparar imagen nueva en el frente (invisible)
         cieloFrente.setAttribute('src', datos.imagen);
         
-        // 3. Iniciar el Cross-Fade Visual
         cieloFrente.setAttribute('animation__fade', {
             property: 'material.opacity',
             from: 0,
             to: 1,
             dur: duracionTransicion,
-            easing: 'easeInOutQuad' // Suavizado al inicio y final
+            easing: 'easeInOutQuad'
         });
 
-        // 4. --- EL TRUCO DEL GIRO ---
-        // Animamos la rotación del RIG (no de la cámara directamente)
-        // para que coincida con el ángulo de la flecha seleccionada.
-        // Usamos la misma duración y easing que el fade visual.
         rig.setAttribute('animation__rotacion', {
             property: 'rotation',
-            // Mantenemos X y Z en 0, solo rotamos Y (horizontal)
             to: `0 ${anguloDestino} 0`,
             dur: duracionTransicion,
             easing: 'easeInOutQuad'
         });
-        // ---------------------------
 
-        // 5. Cuando termina la animación...
         setTimeout(() => {
-            // A. Intercambio de imágenes
             cieloFondo.setAttribute('src', datos.imagen);
             cieloFrente.removeAttribute('animation__fade');
             cieloFrente.setAttribute('material', 'opacity', 0);
-
-            // B. Limpiamos la animación de rotación del rig para no acumularlas
             rig.removeAttribute('animation__rotacion');
-
-            // C. Generar las nuevas flechas
             generarFlechas(datos.flechas);
             contenedorFlechas.setAttribute('visible', 'true');
             
-        }, duracionTransicion + 50); // Pequeño margen de seguridad
+        }, duracionTransicion + 50);
       }
 
       // =============================================================
@@ -228,8 +225,6 @@
           entidad.setAttribute('gltf-model', '#modelo-flecha');
           entidad.setAttribute('scale', '20 20 20'); 
           entidad.setAttribute('position', flecha.position);
-          
-          // Importante: Esta rotación se usará para guiar la cámara
           entidad.setAttribute('rotation', `0 ${parseRotation(flecha.rotation)} 0`); 
           
           entidad.addEventListener('model-loaded', function(){
@@ -256,15 +251,44 @@
         return parseFloat(rotString.split(' ')[1]) || 0;
       }
 
+      // =============================================================
+      // 5. INICIALIZACIÓN Y QUITADO DE PANTALLA DE CARGA
+      // =============================================================
       window.onload = function() { 
         var datos = escenas['entrada'];
         document.querySelector('#cielo-fondo').setAttribute('src', datos.imagen);
         generarFlechas(datos.flechas);
+
+        // --- NUEVO: ESCUCHAR CUANDO LA ESCENA ESTÉ LISTA ---
+        var scene = document.querySelector('a-scene');
+        if (scene.hasLoaded) {
+            ocultarLoader();
+        } else {
+            scene.addEventListener('loaded', ocultarLoader);
+        }
       };
+
+      function ocultarLoader() {
+        var loader = document.getElementById('pantalla-carga');
+        if (loader) {
+            // Le agregamos la clase que baja la opacidad a 0
+            loader.classList.add('oculto');
+            // Esperamos 1 segundo (la duración de la transición CSS) y lo quitamos del DOM
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000);
+        }
+      }
+
     </script>
   </head>
   
   <body>
+    <div id="pantalla-carga">
+        <h1>Tour ESAN 360</h1>
+        <p>Cargando recorrido...</p>
+    </div>
+
     <a-scene 
       renderer="antialias: true; colorManagement: true; sortObjects: true;"
       cursor="rayOrigin: mouse" 
