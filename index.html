@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="utf-8">
-    <title>Tour ESAN 360</title>
+    <title>Tour ESAN 360 - Fusionado</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
 
     <style>
@@ -27,21 +27,30 @@
     
     <script>
       // =============================================================
-      // 1. LÓGICA DEL TOUR
+      // 1. LÓGICA DEL TOUR (FUSIONADA)
       // =============================================================
       AFRAME.registerComponent('tour-logic', {
         init: function () {
           var el = this.el;
           
-          // CLICK: Navegar
+          // CLICK: Navegar e implementar lógica de rotación del Código 1
           el.addEventListener('click', function (evt) {
             var target = el.getAttribute('data-target');
+            
+            // --- LÓGICA DEL CÓDIGO 1 ---
+            // Obtenemos la rotación Y (hacia dónde apunta la flecha)
+            var rotacionFlecha = el.getAttribute('rotation');
+            // A-Frame devuelve un objeto {x, y, z} al usar getAttribute en un componente nativo
+            var anguloDestino = rotacionFlecha ? rotacionFlecha.y : 0;
+            // ---------------------------
+
             if (target && target !== "null") {
-              iniciarTransicion(target);
+              // Pasamos el ángulo a la función de transición
+              iniciarTransicion(target, anguloDestino);
             }
           });
 
-          // HOVER: Efecto visual
+          // HOVER: Efecto visual (Del Código 2)
           el.addEventListener('mouseenter', function () {
             var current = el.getAttribute('scale');
             el.setAttribute('scale', {x: current.x * 1.2, y: current.y * 1.2, z: current.z * 1.2});
@@ -64,8 +73,6 @@
       // =============================================================
       // 2. BASE DE DATOS DE ESCENAS
       // =============================================================
-      // NOTA: He agregado 'rotacionSky'. Por defecto está en '0 -90 0' (tu valor original).
-      // Si al entrar a una escena la imagen no mira a donde quieres, cambia el -90 por 0, 90 o 180.
       const escenas = {
         'entrada': {
           imagen: '#img-entrada',
@@ -186,27 +193,28 @@
       };
 
       // =============================================================
-      // 3. FUNCIONES DE CÁMARA (NUEVO)
+      // 3. FUNCIONES DE CÁMARA
       // =============================================================
-      function resetearCamara() {
+      function resetearCamaraInterna() {
         var cam = document.getElementById('camara-principal');
         if (!cam) return;
 
-        // Resetear controles Look (Yaw y Pitch) para mirar al frente (0,0,0)
+        // Reseteamos SOLO los controles internos (el "cuello" del jugador)
+        // para que vuelva a mirar al frente RELATIVO al cuerpo (rig)
         var lookControls = cam.components['look-controls'];
         if (lookControls) {
           lookControls.yawObject.rotation.y = 0;
           lookControls.pitchObject.rotation.x = 0;
         }
-        
-        // Resetear cualquier rotación residual en la entidad cámara
+        // Reseteamos rotación de la entidad cámara por si acaso
         cam.setAttribute('rotation', '0 0 0');
       }
 
       // =============================================================
-      // 4. FUNCIÓN DE TRANSICIÓN
+      // 4. FUNCIÓN DE TRANSICIÓN (FUSIONADA)
       // =============================================================
-      function iniciarTransicion(nombreEscena) {
+      // Ahora acepta 'anguloDestino' del Código 1
+      function iniciarTransicion(nombreEscena, anguloDestino) {
         var datos = escenas[nombreEscena];
         var contenedorFlechas = document.querySelector('#flechas-container');
         var cieloFondo = document.querySelector('#cielo-fondo'); 
@@ -217,17 +225,25 @@
         // 1. Ocultar flechas
         contenedorFlechas.setAttribute('visible', 'false');
 
-        // 2. Definir rotación del cielo (usar default si no existe)
+        // 2. Definir rotación del cielo
         var rotacionImagen = datos.rotacionSky || "0 -90 0";
 
         // 3. Preparar cielo de FRENTE
         cieloFrente.setAttribute('src', datos.imagen);
         cieloFrente.setAttribute('rotation', rotacionImagen);
 
-        // 4. RESETEAR CÁMARA (Para que mire al frente en la nueva escena)
-        resetearCamara();
+        // --- LÓGICA DEL CÓDIGO 1 INYECTADA AQUÍ ---
+        // 4. ROTAR EL RIG (El cuerpo del jugador)
+        var rig = document.querySelector('#rig');
+        // Usamos el ángulo de la flecha para rotar todo el cuerpo
+        rig.setAttribute('rotation', `0 ${anguloDestino || 0} 0`);
         
-        // 5. Animar opacidad
+        // 5. RESETEAR CÁMARA INTERNA 
+        // (Esto evita que el mouse recuerde el giro anterior)
+        resetearCamaraInterna();
+        // ------------------------------------------
+        
+        // 6. Animar opacidad (Cross-fade)
         cieloFrente.setAttribute('animation__fade', {
             property: 'material.opacity',
             from: 0,
@@ -236,7 +252,7 @@
             easing: 'linear'
         });
 
-        // 6. Finalizar transición
+        // 7. Finalizar transición
         setTimeout(() => {
             // Pasar imagen y rotación al fondo
             cieloFondo.setAttribute('src', datos.imagen);
@@ -265,8 +281,11 @@
           entidad.setAttribute('gltf-model', '#modelo-flecha');
           entidad.setAttribute('scale', '20 20 20'); 
           entidad.setAttribute('position', flecha.position);
+          
+          // Parseamos la rotación para construir el string
           entidad.setAttribute('rotation', `0 ${parseRotation(flecha.rotation)} 0`); 
           
+          // Colorear el modelo al cargar
           entidad.addEventListener('model-loaded', function(){
              const obj = entidad.getObject3D('mesh');
              if (!obj) return;
@@ -300,7 +319,6 @@
         
         // Carga inicial
         cieloFondo.setAttribute('src', datos.imagen);
-        // Aplicar rotación inicial
         cieloFondo.setAttribute('rotation', datos.rotacionSky || '0 -90 0');
         
         generarFlechas(datos.flechas);
