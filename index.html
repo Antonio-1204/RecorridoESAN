@@ -27,30 +27,24 @@
     
     <script>
       // =============================================================
-      // 1. LÓGICA DEL TOUR (FUSIONADA)
+      // 1. LÓGICA DEL TOUR
       // =============================================================
       AFRAME.registerComponent('tour-logic', {
         init: function () {
           var el = this.el;
           
-          // CLICK: Navegar e implementar lógica de rotación del Código 1
           el.addEventListener('click', function (evt) {
             var target = el.getAttribute('data-target');
             
-            // --- LÓGICA DEL CÓDIGO 1 ---
-            // Obtenemos la rotación Y (hacia dónde apunta la flecha)
+            // Obtenemos la rotación Y de la flecha
             var rotacionFlecha = el.getAttribute('rotation');
-            // A-Frame devuelve un objeto {x, y, z} al usar getAttribute en un componente nativo
             var anguloDestino = rotacionFlecha ? rotacionFlecha.y : 0;
-            // ---------------------------
 
             if (target && target !== "null") {
-              // Pasamos el ángulo a la función de transición
               iniciarTransicion(target, anguloDestino);
             }
           });
 
-          // HOVER: Efecto visual (Del Código 2)
           el.addEventListener('mouseenter', function () {
             var current = el.getAttribute('scale');
             el.setAttribute('scale', {x: current.x * 1.2, y: current.y * 1.2, z: current.z * 1.2});
@@ -187,8 +181,22 @@
           imagen: '#img-entradaCapilla',
           rotacionSky: '0 -90 0',
           flechas: [
-            { target: 'salidaAreasVerdes', position: '1.92 -1 -19.91', rotation: '0 180 0' }
+            { target: 'salidaAreasVerdes', position: '1.92 -1 -19.91', rotation: '0 180 0' },
+            
+            // --- AQUÍ ESTÁ LA NUEVA FLECHA AL FABLAB ---
+            // Usa Ctrl + Alt + i para ajustar esta posición exacta
+            { target: 'fabLab', position: '-20 -1 10', rotation: '0 0 0' } 
           ]
+        },
+        // --- NUEVA ESCENA: FABLAB ---
+        'fabLab': {
+            imagen: '#img-fabLab', // Asegúrate de tener esta imagen en assets
+            rotacionSky: '0 -90 0',
+            flechas: [
+                // Flecha para regresar a la capilla
+                { target: 'explanadaConvention', position: '2 -1 -10', rotation: '0 180 0' },
+		{ target: 'entradaCapilla', position: '15 -1 -2', rotation: '0 115 0' }
+            ]
         }
       };
 
@@ -198,22 +206,17 @@
       function resetearCamaraInterna() {
         var cam = document.getElementById('camara-principal');
         if (!cam) return;
-
-        // Reseteamos SOLO los controles internos (el "cuello" del jugador)
-        // para que vuelva a mirar al frente RELATIVO al cuerpo (rig)
         var lookControls = cam.components['look-controls'];
         if (lookControls) {
           lookControls.yawObject.rotation.y = 0;
           lookControls.pitchObject.rotation.x = 0;
         }
-        // Reseteamos rotación de la entidad cámara por si acaso
         cam.setAttribute('rotation', '0 0 0');
       }
 
       // =============================================================
-      // 4. FUNCIÓN DE TRANSICIÓN (FUSIONADA)
+      // 4. FUNCIÓN DE TRANSICIÓN
       // =============================================================
-      // Ahora acepta 'anguloDestino' del Código 1
       function iniciarTransicion(nombreEscena, anguloDestino) {
         var datos = escenas[nombreEscena];
         var contenedorFlechas = document.querySelector('#flechas-container');
@@ -222,28 +225,18 @@
         
         var duracionTransicion = 1500;
 
-        // 1. Ocultar flechas
         contenedorFlechas.setAttribute('visible', 'false');
 
-        // 2. Definir rotación del cielo
         var rotacionImagen = datos.rotacionSky || "0 -90 0";
 
-        // 3. Preparar cielo de FRENTE
         cieloFrente.setAttribute('src', datos.imagen);
         cieloFrente.setAttribute('rotation', rotacionImagen);
 
-        // --- LÓGICA DEL CÓDIGO 1 INYECTADA AQUÍ ---
-        // 4. ROTAR EL RIG (El cuerpo del jugador)
         var rig = document.querySelector('#rig');
-        // Usamos el ángulo de la flecha para rotar todo el cuerpo
         rig.setAttribute('rotation', `0 ${anguloDestino || 0} 0`);
         
-        // 5. RESETEAR CÁMARA INTERNA 
-        // (Esto evita que el mouse recuerde el giro anterior)
         resetearCamaraInterna();
-        // ------------------------------------------
         
-        // 6. Animar opacidad (Cross-fade)
         cieloFrente.setAttribute('animation__fade', {
             property: 'material.opacity',
             from: 0,
@@ -252,17 +245,13 @@
             easing: 'linear'
         });
 
-        // 7. Finalizar transición
         setTimeout(() => {
-            // Pasar imagen y rotación al fondo
             cieloFondo.setAttribute('src', datos.imagen);
             cieloFondo.setAttribute('rotation', rotacionImagen);
             
-            // Resetear frente
             cieloFrente.removeAttribute('animation__fade');
             cieloFrente.setAttribute('material', 'opacity', 0);
             
-            // Mostrar flechas
             generarFlechas(datos.flechas);
             contenedorFlechas.setAttribute('visible', 'true');
             
@@ -281,11 +270,8 @@
           entidad.setAttribute('gltf-model', '#modelo-flecha');
           entidad.setAttribute('scale', '20 20 20'); 
           entidad.setAttribute('position', flecha.position);
-          
-          // Parseamos la rotación para construir el string
           entidad.setAttribute('rotation', `0 ${parseRotation(flecha.rotation)} 0`); 
           
-          // Colorear el modelo al cargar
           entidad.addEventListener('model-loaded', function(){
              const obj = entidad.getObject3D('mesh');
              if (!obj) return;
@@ -317,7 +303,6 @@
         var datos = escenas['entrada'];
         var cieloFondo = document.querySelector('#cielo-fondo');
         
-        // Carga inicial
         cieloFondo.setAttribute('src', datos.imagen);
         cieloFondo.setAttribute('rotation', datos.rotacionSky || '0 -90 0');
         
@@ -371,6 +356,8 @@
         <img id="img-aulasAyB" src="imagenes/AulasAyB.jpeg">
         <img id="img-salidaAreasVerdes" src="imagenes/SalidaAreasVerdes.jpeg">
         <img id="img-entradaCapilla" src="imagenes/EntradaCapilla.jpeg">
+        
+        <img id="img-fabLab" src="imagenes/FabLab.jpeg">
 
         <a-asset-item id="modelo-flecha" src="imagenes/Flecha.glb"></a-asset-item>
       </a-assets>
@@ -390,5 +377,4 @@
 
     </a-scene>
   </body>
-</html>
-
+</html>	
